@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Recipes{% endblock %}
+{% block content %}
+<h1>Recipes</h1>
+
+<details class="add-recipe">
+<summary>+ Add a recipe</summary>
+<form method="post" action="/recipes/add" id="recipe-form">
+  <label>Title <input type="text" name="title" required></label>
+  <label>Source
+    <select name="source_type">
+      <option value="book">From a book I own</option>
+      <option value="manual_online">Online recipe (added manually)</option>
+    </select>
+  </label>
+  <label>Book name (if applicable) <input type="text" name="book_name"></label>
+  <label>URL (if online) <input type="url" name="url"></label>
+  <label>Servings <input type="number" name="servings" value="1" min="1"></label>
+  <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" required></label>
+  <label>Prep time (minutes) <input type="number" name="prep_time_minutes" min="0"></label>
+  <label>Instructions <textarea name="instructions" rows="5"></textarea></label>
+
+  <h3>Ingredients</h3>
+  <div id="ingredient-rows">
+    <div class="ing-row">
+      <input type="text" name="ing_name" placeholder="Ingredient name">
+      <input type="text" name="ing_qty" placeholder="Qty">
+      <input type="text" name="ing_unit" placeholder="Unit">
+    </div>
+  </div>
+  <button type="button" id="add-ing-row">+ Add ingredient</button>
+  <br><br>
+  <button type="submit">Save recipe</button>
+</form>
+</details>
+
+<div class="recipe-grid">
+{% for r in recipes %}
+  <a class="recipe-card" href="/recipes/{{ r.id }}">
+    <h3>{{ r.title }}</h3>
+    <p>{% if r.book_name %}{{ r.book_name }}{% elif r.url %}Online recipe{% else %}&nbsp;{% endif %}</p>
+    <p class="calories">{{ "%.0f"|format(r.calories_per_serving) }} kcal / serving</p>
+  </a>
+{% else %}
+  <p>No recipes saved yet. Add one above.</p>
+{% endfor %}
+</div>
+
+<script src="/static/app.js"></script>
+{% endblock %}

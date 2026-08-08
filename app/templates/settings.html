@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if saved %}<p class="success">Saved.</p>{% endif %}
+
+<h2>Spoonacular API key</h2>
+<p class="hint">Used for online recipe recommendations with calories. Get a free key at
+  <a href="https://spoonacular.com/food-api" target="_blank" rel="noopener">spoonacular.com/food-api</a>.</p>
+<form method="post" action="/settings/spoonacular" class="inline-form">
+  <input type="text" name="api_key" value="{{ api_key }}" placeholder="Spoonacular API key" style="width: 60%;">
+  <button type="submit">Save</button>
+</form>
+
+<h2>Gmail connection</h2>
+<p class="hint">
+  Create an OAuth client in <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>:
+  enable the Gmail API, configure the OAuth consent screen (add yourself as a test user),
+  create an OAuth client ID of type "Web application", and add
+  <code>http://localhost:8000/gmail/oauth2callback</code> as an authorized redirect URI.
+  Download the client JSON and paste it below.
+</p>
+<p>Status:
+  {% if has_client_secret %}<span class="badge badge-manual">configured</span>
+  {% else %}<span class="badge">not configured</span>{% endif %}
+</p>
+<form method="post" action="/settings/gmail_client_secret">
+  <textarea name="client_secret_json" rows="6" style="width:100%;" placeholder='Paste the downloaded client_secret JSON here'></textarea>
+  <br><button type="submit">Save Gmail credentials</button>
+</form>
+<p class="hint">Then go to <a href="/gmail">Email Import</a> to connect your account.</p>
+{% endblock %}

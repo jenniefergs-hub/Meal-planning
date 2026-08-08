@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.title }}{% endblock %}
+{% block content %}
+<a href="/recipes">&larr; Back to recipes</a>
+<h1>{{ recipe.title }}</h1>
+<p>
+  {% if recipe.book_name %}From book: <strong>{{ recipe.book_name }}</strong>{% endif %}
+  {% if recipe.url %} &middot; <a href="{{ recipe.url }}" target="_blank" rel="noopener">Original recipe link</a>{% endif %}
+</p>
+<p>
+  <strong>{{ "%.0f"|format(recipe.calories_per_serving) }} kcal</strong> per serving
+  &middot; Servings: {{ recipe.servings }}
+  {% if recipe.prep_time_minutes %} &middot; Prep: {{ recipe.prep_time_minutes }} min{% endif %}
+</p>
+
+<h3>Ingredients</h3>
+<ul>
+{% for ri in recipe.ingredients %}
+  <li>{{ ri.quantity or "" }} {{ ri.unit or "" }} {{ ri.name }}</li>
+{% endfor %}
+</ul>
+
+{% if recipe.instructions %}
+<h3>Instructions</h3>
+<p class="instructions">{{ recipe.instructions }}</p>
+{% endif %}
+
+<form method="post" action="/recipes/{{ recipe.id }}/delete" onsubmit="return confirm('Delete this recipe?');">
+  <button type="submit" class="danger">Delete recipe</button>
+</form>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Email Import{% endblock %}
+{% block content %}
+<h1>Email Import</h1>
+
+{% if error %}<p class="error">Something went wrong: {{ error }}</p>{% endif %}
+{% if synced is not none %}<p class="success">Sync complete &mdash; {{ synced }} new item(s) found for review.</p>{% endif %}
+
+{% if not has_client_secret %}
+  <p>Set up Gmail access first in <a href="/settings">Settings</a>.</p>
+{% elif not connected %}
+  <p>Gmail is not connected yet.</p>
+  <a href="/gmail/authorize"><button>Connect Gmail</button></a>
+{% else %}
+  <p>Gmail connected.{% if last_sync %} Last synced: {{ last_sync }}{% endif %}</p>
+
+  <form method="post" action="/gmail/query" class="inline-form">
+    <input type="text" name="query" value="{{ query }}" style="width: 60%;">
+    <button type="submit">Save search</button>
+  </form>
+  <p class="hint">Tip: narrow this to your grocery store, e.g. <code>from:instacart.com</code> or <code>from:orders@amazon.com</code>, for more accurate parsing.</p>
+
+  <form method="post" action="/gmail/sync">
+    <button type="submit">Sync receipts now</button>
+  </form>
+{% endif %}
+
+<h2>Pending items to review</h2>
+<p class="hint">Receipt parsing is best-effort. Approve items to add them to your pantry, or reject anything that isn't a food ingredient.</p>
+<table class="table">
+  <thead><tr><th>Item</th><th>Qty</th><th>Email</th><th>Raw line</th><th></th></tr></thead>
+  <tbody>
+  {% for p in pending %}
+    <tr>
+      <td>{{ p.parsed_name }}</td>
+      <td>{{ p.parsed_quantity or "" }}</td>
+      <td>{{ p.email_subject or "" }}</td>
+      <td class="raw">{{ p.raw_line }}</td>
+      <td>
+        <form method="post" action="/gmail/pending/{{ p.id }}/approve" style="display:inline;">
+          <button type="submit">Approve</button>
+        </form>
+        <form method="post" action="/gmail/pending/{{ p.id }}/reject" style="display:inline;">
+          <button type="submit" class="danger">Reject</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5">Nothing to review.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
