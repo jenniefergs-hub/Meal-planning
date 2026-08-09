@@ -22,7 +22,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open **http://localhost:8000**. Data is stored locally in `data/app.db` (SQLite) — nothing leaves your machine except the two optional API calls described below.
+Open **http://localhost:8000**. Data is stored locally in `data/app.db` (SQLite) — nothing leaves your machine except the two optional API calls described below. (If a `DATABASE_URL` environment variable is set, the app uses that Postgres database instead — see Section 6's persistent storage step for deployed use; you don't need this locally.)
 
 Use `http://localhost:8000`, not `127.0.0.1:8000` — it must match the Gmail redirect URI you register in step 4.
 
@@ -86,6 +86,19 @@ If you don't have a computer, deploy the app to [Render](https://render.com)'s f
 5. Click **Create Web Service**. The first build/deploy takes a few minutes; you'll get a URL like `https://kitchen-companion-xxxx.onrender.com`.
 6. Open that URL in Safari — it'll prompt for the username/password you just set in step 4.
 
+### Persistent storage (so data survives redeploys)
+
+By default the app stores data in a local SQLite file, which works fine locally but doesn't survive a Render redeploy (Render's free-tier disk is wiped on every new deploy). To keep your pantry and recipes permanently, point the app at a free hosted Postgres database instead — this only takes a few minutes and is entirely browser-based:
+
+1. Go to https://neon.tech and sign up (free tier, no credit card required, no expiry).
+2. Create a new project (any name, any region).
+3. On the project dashboard, copy the **connection string** — it looks like `postgresql://user:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require`.
+4. Back in Render, open your web service → **Environment** → add a variable:
+   - `DATABASE_URL` — paste the Neon connection string.
+5. Render will automatically redeploy with the new variable. From then on, all your data lives in Neon's Postgres — it survives Render redeploys, restarts, and sleep/wake cycles indefinitely.
+
+If you skip this step, the app still works fine on Render — your data just resets each time new code is deployed (see caveats below).
+
 ### Updating Spoonacular and Gmail for the new address
 
 - **Spoonacular**: unchanged — go to the deployed app's Settings page and paste your key in.
@@ -97,7 +110,7 @@ If you don't have a computer, deploy the app to [Render](https://render.com)'s f
 ### Free-tier caveats
 
 - **Sleeps when idle**: after 15 minutes with no visits, Render spins the app down. The next visit takes 30-60 seconds to wake it back up — that's expected, not broken.
-- **Data resets on redeploy**: the free tier's disk isn't persistent across deploys, so pantry/recipe data is wiped whenever new code is pushed (not on ordinary sleep/wake cycles — only on an actual deploy). If that becomes a problem, ask for free persistent storage (e.g. via Neon's free Postgres tier) to be added — left out of this first pass to keep the initial deployment simple.
+- **Data resets on redeploy unless you set up `DATABASE_URL`** (see above): without it, the free tier's local disk isn't persistent across deploys, so pantry/recipe data is wiped whenever new code is pushed (not on ordinary sleep/wake cycles — only on an actual deploy). With a Neon `DATABASE_URL` set, this doesn't apply — data is permanent.
 
 ## Notes and limitations
 
@@ -107,3 +120,4 @@ If you don't have a computer, deploy the app to [Render](https://render.com)'s f
 - This is a single-user app — ratings are attributed by household member name, not authenticated accounts, and there's only one shared password for the whole app (see the deployment section if running it publicly), not per-person logins.
 - `data/` and `credentials/` (your Gmail token and OAuth client secret) are gitignored and never committed.
 - If deployed publicly (Section 6), set `APP_PASSWORD` (and optionally `APP_USERNAME`) as environment variables on the host — never commit them to the repo. Locally, if these aren't set, the app runs without a password prompt, same as before.
+- `DATABASE_URL` (your Neon connection string, if you set one up) contains a database password — it's an environment variable on Render, never written to the repo, same treatment as `APP_PASSWORD`.
