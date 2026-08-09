@@ -76,6 +76,10 @@ On the **Recipes** page, click **"Import from a URL or photo"**.
 
 Either way, you land on a pre-filled version of the "Add a recipe" form before anything is saved — nothing is added to your recipe book until you review and click **Save recipe**. Calories are almost never available from either source, so that field is usually left for you to fill in.
 
+### Calculating calories from ingredients
+
+On a recipe's page, click **"Calculate calories from ingredients"** (needs a Spoonacular key from Section 3). The app looks up nutrition for each ingredient by name and quantity, sums the calories, and divides by the recipe's servings. You'll see a breakdown of what was matched (and a warning if any ingredient couldn't be matched, which counts as 0 calories in the total) before choosing whether to apply the result — it never overwrites the recipe's calorie figure automatically. Handy for recipes imported from a photo, or any recipe where you don't already know the calorie count.
+
 ### Marking a recipe as cooked
 
 On a recipe's page, click **"I made this — update my pantry"**. The app shows you which pantry items match the recipe's ingredients, pre-ticked; untick anything you didn't actually use up, then confirm. Ticked items are removed from your pantry entirely (quantities aren't tracked precisely enough to subtract partial amounts, e.g. "used 2 of the 6 eggs"), and the recipe's cooked count/date is updated.

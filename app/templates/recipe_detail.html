@@ -12,6 +12,18 @@
   &middot; Servings: {{ recipe.servings }}
   {% if recipe.prep_time_minutes %} &middot; Prep: {{ recipe.prep_time_minutes }} min{% endif %}
 </p>
+
+<form method="post" action="/recipes/{{ recipe.id }}/calculate_calories" style="display:inline;">
+  <button type="submit">Calculate calories from ingredients</button>
+</form>
+{% if error == "missing_spoonacular_key" %}
+  <p class="error">Add a Spoonacular API key in <a href="/settings">Settings</a> first.</p>
+{% elif error == "no_ingredients" %}
+  <p class="error">Add some ingredients to this recipe first.</p>
+{% elif error == "calc_failed" %}
+  <p class="error">Couldn't calculate calories right now — check your Spoonacular key and quota, then try again.</p>
+{% endif %}
+{% if calories_applied %}<p class="success">Calories per serving updated.</p>{% endif %}
 <p class="hint">
   {% if recipe.times_cooked %}
     Cooked {{ recipe.times_cooked }} time{{ "s" if recipe.times_cooked != 1 else "" }}{% if recipe.last_cooked_at %}, last on {{ recipe.last_cooked_at.strftime("%Y-%m-%d") }}{% endif %}.

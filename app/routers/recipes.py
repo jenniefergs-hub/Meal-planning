@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
-from ..services import recipe_import, settings_service
+from ..services import recipe_import, settings_service, spoonacular_service
 from ..services.recommender import match_recipe_to_pantry
 from ..templates_config import templates
 
@@ -136,6 +136,8 @@ def recipe_detail(recipe_id: int, request: Request, db: Session = Depends(get_db
             "household_members": household_members,
             "ratings_by_member": ratings_by_member,
             "cooked": request.query_params.get("cooked"),
+            "error": request.query_params.get("error"),
+            "calories_applied": request.query_params.get("calories_applied"),
         },
     )
 
@@ -180,6 +182,41 @@ async def cook_recipe_submit(recipe_id: int, request: Request, db: Session = Dep
     recipe.last_cooked_at = datetime.utcnow()
     db.commit()
     return RedirectResponse(f"/recipes/{recipe_id}?cooked=1", status_code=303)
+
+
+@router.post("/recipes/{recipe_id}/calculate_calories")
+def calculate_calories(recipe_id: int, request: Request, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+
+    api_key = settings_service.get_setting(db, "spoonacular_api_key")
+    if not api_key:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=missing_spoonacular_key", status_code=303)
+    if not recipe.ingredients:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=no_ingredients", status_code=303)
+
+    try:
+        result = spoonacular_service.estimate_recipe_calories(api_key, recipe)
+    except Exception:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=calc_failed", status_code=303)
+
+    return templates.TemplateResponse(
+        request, "calorie_calc_review.html", {"recipe": recipe, "result": result}
+    )
+
+
+@router.post("/recipes/{recipe_id}/apply_calories")
+def apply_calculated_calories(recipe_id: int, per_serving: str = Form(...), db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+    try:
+        recipe.calories_per_serving = float(per_serving)
+    except ValueError:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=calc_failed", status_code=303)
+    db.commit()
+    return RedirectResponse(f"/recipes/{recipe_id}?calories_applied=1", status_code=303)
 
 
 @router.post("/recipes/{recipe_id}/ratings")
