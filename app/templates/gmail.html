@@ -5,6 +5,8 @@
 
 {% if error == "connect_failed" %}
   <p class="error">Couldn't connect to Gmail. Double-check the client JSON pasted into Settings is complete and try again.</p>
+{% elif error == "bad_client_secret" %}
+  <p class="error">The Gmail client JSON in Settings looks incomplete or malformed. Go to Settings and re-paste the full JSON file you downloaded from Google Cloud Console (starting with <code>{"web":{...}}</code>), then try Connect Gmail again.</p>
 {% elif error == "sync_failed" %}
   <p class="error">Couldn't sync with Gmail. Try reconnecting from this page, or check back shortly.</p>
 {% elif error == "not_connected" %}

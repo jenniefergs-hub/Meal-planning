@@ -43,7 +43,10 @@ def gmail_authorize(request: Request, db: Session = Depends(get_db)):
     if not gmail_service.has_client_secret(db):
         return RedirectResponse("/settings?error=missing_client_secret")
     redirect_uri = str(request.url_for("gmail_oauth2callback"))
-    auth_url, _state = gmail_service.build_auth_url(db, redirect_uri)
+    try:
+        auth_url, _state = gmail_service.build_auth_url(db, redirect_uri)
+    except Exception:
+        return RedirectResponse("/gmail?error=bad_client_secret")
     return RedirectResponse(auth_url)
 
 
