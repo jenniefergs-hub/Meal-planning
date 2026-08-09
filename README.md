@@ -1,6 +1,6 @@
 # Kitchen Companion
 
-A web app (run locally on a computer, or deployed for free so it's reachable from any browser — see Section 6) that:
+A web app (run locally on a computer, or deployed for free so it's reachable from any browser — see Section 7) that:
 
 - Tracks ingredients you have on hand (added manually, or pulled from grocery receipt emails via Gmail).
 - Stores recipes from books you own (with calories, ingredients, instructions).
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open **http://localhost:8000**. Data is stored locally in `data/app.db` (SQLite) — nothing leaves your machine except the two optional API calls described below. (If a `DATABASE_URL` environment variable is set, the app uses that Postgres database instead — see Section 6's persistent storage step for deployed use; you don't need this locally.)
+Open **http://localhost:8000**. Data is stored locally in `data/app.db` (SQLite) — nothing leaves your machine except the two optional API calls described below. (If a `DATABASE_URL` environment variable is set, the app uses that Postgres database instead — see Section 7's persistent storage step for deployed use; you don't need this locally.)
 
 Use `http://localhost:8000`, not `127.0.0.1:8000` — it must match the Gmail redirect URI you register in step 4.
 
@@ -34,7 +34,15 @@ Use `http://localhost:8000`, not `127.0.0.1:8000` — it must match the Gmail re
 
 Without a key, the app still works fully for your own pantry + recipe book — you just won't get live online suggestions.
 
-## 4. Connect Gmail (to auto-import grocery receipts)
+## 4. Add an OCR.space API key (for importing recipes from photos)
+
+1. Sign up for a free key at https://ocr.space/ocrapi (no credit card required).
+2. In the app, go to **Settings** and paste the key in, then Save.
+3. On the **Recipes** page, click "Import from a URL or photo" → upload a photo.
+
+Without a key, importing from a **URL** still works (it doesn't need this key) — you'll just see a message if you try the photo option without one.
+
+## 5. Connect Gmail (to auto-import grocery receipts)
 
 Live Gmail access requires you to register your own OAuth client with Google — there's no way around this, Google requires every app to have its own credentials.
 
@@ -52,12 +60,21 @@ The app only requests **read-only** Gmail access (`gmail.readonly`) and only fet
 
 Click **Sync receipts now** to fetch and parse matching emails. Parsed line items land in a **Pending review** queue — receipt formats vary too much across retailers to trust automatic parsing blindly, so nothing is added to your pantry until you click **Approve** on each item (or **Reject** to discard it).
 
-## 5. Using the app
+## 6. Using the app
 
 - **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts.
-- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required) or manually add an online recipe you like (paste the URL). On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
+- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required), manually add an online recipe you like (paste the URL), or import from a URL or photo (see below). On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
 - **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each.
-- **Settings**: household member names, Spoonacular API key, and Gmail credentials.
+- **Settings**: household member names, Spoonacular API key, OCR API key, and Gmail credentials.
+
+### Importing a recipe from a URL or photo
+
+On the **Recipes** page, click **"Import from a URL or photo"**.
+
+- **From a URL**: paste a link to a recipe page. The app reads structured recipe data most modern recipe sites embed (schema.org markup) to pull the title, ingredients, instructions, servings, and prep time — plus calories, if the site happens to publish them (many don't). Not every page will work; if it can't find recipe data, you'll get a message and can add the recipe manually instead.
+- **From a photo**: upload a photo of a cookbook page (needs the OCR.space key from Section 4). The app reads the text and makes a rough guess at splitting it into a title, ingredient lines, and instructions, based on which lines start with a quantity. This is much less reliable than the URL import — cookbook layouts vary a lot — so review it carefully.
+
+Either way, you land on a pre-filled version of the "Add a recipe" form before anything is saved — nothing is added to your recipe book until you review and click **Save recipe**. Calories are almost never available from either source, so that field is usually left for you to fill in.
 
 ### Marking a recipe as cooked
 
@@ -67,7 +84,7 @@ On a recipe's page, click **"I made this — update my pantry"**. The app shows 
 
 Set up to 4 household member names in **Settings**. Each recipe page lets every member rate it 1–5 stars. Ratings feed into the **Recommendations** ranking (65% ingredient match, 35% average rating), so recipes your household rates highly get suggested more often; unrated recipes are scored neutrally so they aren't buried.
 
-## 6. Deploying online (no computer needed, e.g. phone-only access)
+## 7. Deploying online (no computer needed, e.g. phone-only access)
 
 If you don't have a computer, deploy the app to [Render](https://render.com)'s free tier instead of running it locally — the whole setup is done through a web browser, so it works from Safari on your iPhone.
 
@@ -116,8 +133,9 @@ If you skip this step, the app still works fine on Render — your data just res
 
 - **Receipt parsing is heuristic.** Grocery receipt emails have no standard format, so the parser looks for common patterns (quantity/name/price lines, HTML table rows) and flags blacklist words (tax, tip, delivery, total, etc.). It won't be perfect — that's why parsed items always go through the review queue before becoming pantry ingredients.
 - **Calories for book recipes are entered by you** when you add the recipe, since there's no way to automatically look up calories for a recipe from a physical cookbook. Calories for online (Spoonacular) recommendations are fetched automatically.
+- **URL and photo recipe import are also best-effort.** URL import relies on the page publishing structured recipe data (most modern recipe blogs do; older or unusual sites may not). Photo import depends on OCR quality and a simple "does this line start with a number" heuristic to separate ingredients from instructions, which won't handle every cookbook layout well. Both land in an editable review form before saving, specifically because neither is reliable enough to trust unattended.
 - **"Cooked" pantry updates are all-or-nothing per item** — the app removes matched pantry ingredients entirely rather than subtracting partial quantities, since quantities are stored as free text (e.g. "2 lb", "a bunch") that can't be reliably subtracted.
 - This is a single-user app — ratings are attributed by household member name, not authenticated accounts, and there's only one shared password for the whole app (see the deployment section if running it publicly), not per-person logins.
 - `data/` (your local SQLite file, if not using `DATABASE_URL`) is gitignored and never committed. Your Gmail client secret and access token are stored as rows in the app's own database (not local files), so they persist correctly on hosts with an ephemeral filesystem, like Render's free tier.
-- If deployed publicly (Section 6), set `APP_PASSWORD` (and optionally `APP_USERNAME`) as environment variables on the host — never commit them to the repo. Locally, if these aren't set, the app runs without a password prompt, same as before.
+- If deployed publicly (Section 7), set `APP_PASSWORD` (and optionally `APP_USERNAME`) as environment variables on the host — never commit them to the repo. Locally, if these aren't set, the app runs without a password prompt, same as before.
 - `DATABASE_URL` (your Neon connection string, if you set one up) contains a database password — it's an environment variable on Render, never written to the repo, same treatment as `APP_PASSWORD`.

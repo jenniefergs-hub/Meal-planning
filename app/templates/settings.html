@@ -22,6 +22,14 @@
   <button type="submit">Save</button>
 </form>
 
+<h2>OCR API key (for importing recipes from photos)</h2>
+<p class="hint">Used to read text from recipe photos. Get a free key (no credit card) at
+  <a href="https://ocr.space/ocrapi" target="_blank" rel="noopener">ocr.space/ocrapi</a>.</p>
+<form method="post" action="/settings/ocr" class="inline-form">
+  <input type="text" name="api_key" value="{{ ocr_api_key }}" placeholder="OCR.space API key" style="width: 60%;">
+  <button type="submit">Save</button>
+</form>
+
 <h2>Gmail connection</h2>
 <p class="hint">
   Create an OAuth client in <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>:

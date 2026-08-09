@@ -12,12 +12,14 @@ router = APIRouter()
 @router.get("/settings")
 def settings_page(request: Request, db: Session = Depends(get_db)):
     api_key = settings_service.get_setting(db, "spoonacular_api_key") or ""
+    ocr_api_key = settings_service.get_setting(db, "ocr_api_key") or ""
     household_members = settings_service.get_household_members(db)
     return templates.TemplateResponse(
         request,
         "settings.html",
         {
             "api_key": api_key,
+            "ocr_api_key": ocr_api_key,
             "household_members": household_members,
             "has_client_secret": gmail_service.has_client_secret(db),
             "error": request.query_params.get("error"),
@@ -29,6 +31,12 @@ def settings_page(request: Request, db: Session = Depends(get_db)):
 @router.post("/settings/spoonacular")
 def save_spoonacular(api_key: str = Form(""), db: Session = Depends(get_db)):
     settings_service.set_setting(db, "spoonacular_api_key", api_key.strip())
+    return RedirectResponse("/settings?saved=1", status_code=303)
+
+
+@router.post("/settings/ocr")
+def save_ocr_key(api_key: str = Form(""), db: Session = Depends(get_db)):
+    settings_service.set_setting(db, "ocr_api_key", api_key.strip())
     return RedirectResponse("/settings?saved=1", status_code=303)
 
 

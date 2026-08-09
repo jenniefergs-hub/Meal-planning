@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Review imported recipe{% endblock %}
+{% block content %}
+<a href="/recipes/import">&larr; Back to import</a>
+<h1>Review before saving</h1>
+<p class="hint">
+  {% if source == "url" %}
+    Imported from the URL below. Check everything, especially calories — most recipe pages don't include reliable nutrition data.
+  {% else %}
+    Imported from your photo via OCR. This is best-effort text recognition split into a rough guess at ingredients and instructions — check every field carefully before saving.
+  {% endif %}
+</p>
+
+<form method="post" action="/recipes/add" class="add-recipe" style="display: block;">
+  <label>Title <input type="text" name="title" value="{{ parsed.title }}" required></label>
+  <label>Source
+    <select name="source_type">
+      <option value="manual_online" {% if source == "url" %}selected{% endif %}>Online recipe</option>
+      <option value="book" {% if source == "photo" %}selected{% endif %}>From a book I own</option>
+    </select>
+  </label>
+  <label>Book name (if applicable) <input type="text" name="book_name"></label>
+  <label>URL <input type="url" name="url" value="{{ parsed.url or '' }}"></label>
+  <label>Servings <input type="number" name="servings" value="{{ parsed.servings or 1 }}" min="1"></label>
+  <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" value="{{ parsed.calories_per_serving or '' }}" required></label>
+  <label>Prep time (minutes) <input type="number" name="prep_time_minutes" min="0" value="{{ parsed.prep_time_minutes or '' }}"></label>
+  <label>Instructions <textarea name="instructions" rows="8">{{ parsed.instructions }}</textarea></label>
+
+  <h3>Ingredients</h3>
+  <div id="ingredient-rows">
+  {% for ing in parsed.ingredients %}
+    <div class="ing-row">
+      <input type="text" name="ing_name" placeholder="Ingredient name" value="{{ ing.name }}">
+      <input type="text" name="ing_qty" placeholder="Qty" value="{{ ing.quantity }}">
+      <input type="text" name="ing_unit" placeholder="Unit" value="{{ ing.unit }}">
+    </div>
+  {% else %}
+    <div class="ing-row">
+      <input type="text" name="ing_name" placeholder="Ingredient name">
+      <input type="text" name="ing_qty" placeholder="Qty">
+      <input type="text" name="ing_unit" placeholder="Unit">
+    </div>
+  {% endfor %}
+  </div>
+  <button type="button" id="add-ing-row">+ Add ingredient</button>
+  <br><br>
+  <button type="submit">Save recipe</button>
+</form>
+
+<script src="/static/app.js"></script>
+{% endblock %}

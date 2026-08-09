@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
-from ..services import settings_service
+from ..services import recipe_import, settings_service
 from ..services.recommender import match_recipe_to_pantry
 from ..templates_config import templates
 
@@ -17,6 +17,55 @@ router = APIRouter()
 def recipes_page(request: Request, db: Session = Depends(get_db)):
     recipes = db.query(models.Recipe).order_by(models.Recipe.created_at.desc()).all()
     return templates.TemplateResponse(request, "recipes.html", {"recipes": recipes})
+
+
+@router.get("/recipes/import")
+def import_recipe_page(request: Request):
+    return templates.TemplateResponse(
+        request, "recipe_import.html", {"error": request.query_params.get("error")}
+    )
+
+
+@router.post("/recipes/import/url")
+async def import_recipe_from_url(request: Request):
+    form = await request.form()
+    url = (form.get("url") or "").strip()
+    if not url:
+        return RedirectResponse("/recipes/import?error=missing_url", status_code=303)
+    try:
+        parsed = recipe_import.import_from_url(url)
+    except Exception:
+        return RedirectResponse("/recipes/import?error=url_failed", status_code=303)
+    return templates.TemplateResponse(
+        request, "recipe_import_review.html", {"parsed": parsed, "source": "url"}
+    )
+
+
+@router.post("/recipes/import/photo")
+async def import_recipe_from_photo(request: Request, db: Session = Depends(get_db)):
+    api_key = settings_service.get_setting(db, "ocr_api_key")
+    if not api_key:
+        return RedirectResponse("/settings?error=missing_ocr_key", status_code=303)
+
+    form = await request.form()
+    upload = form.get("photo")
+    if not upload or not getattr(upload, "filename", None):
+        return RedirectResponse("/recipes/import?error=missing_photo", status_code=303)
+
+    image_bytes = await upload.read()
+    try:
+        text = recipe_import.ocr_image(api_key, image_bytes, upload.filename)
+        parsed = recipe_import.parse_ocr_text(text)
+    except Exception:
+        return RedirectResponse("/recipes/import?error=ocr_failed", status_code=303)
+
+    parsed.setdefault("servings", 1)
+    parsed.setdefault("prep_time_minutes", None)
+    parsed.setdefault("calories_per_serving", None)
+    parsed.setdefault("url", None)
+    return templates.TemplateResponse(
+        request, "recipe_import_review.html", {"parsed": parsed, "source": "photo"}
+    )
 
 
 @router.post("/recipes/add")
