@@ -104,7 +104,13 @@ def ocr_image(api_key: str, image_bytes: bytes, filename: str) -> str:
         "https://api.ocr.space/parse/image",
         headers={"apikey": api_key},
         files={"file": (filename or "photo.jpg", image_bytes)},
-        data={"language": "eng", "isOverlayRequired": "false", "OCREngine": "2"},
+        data={
+            "language": "eng",
+            "isOverlayRequired": "false",
+            "OCREngine": "2",
+            "scale": "true",
+            "detectOrientation": "true",
+        },
         timeout=30,
     )
     resp.raise_for_status()
