@@ -4,8 +4,10 @@
 <a href="/recipes/import">&larr; Back to import</a>
 <h1>Review before saving</h1>
 <p class="hint">
-  {% if source == "url" %}
-    Imported from the URL below. Check everything, especially calories — most recipe pages don't include reliable nutrition data.
+  {% if source == "url" and not parsed.fallback %}
+    Imported from the URL below using the page's structured recipe data. Check everything, especially calories — most recipe pages don't include reliable nutrition data.
+  {% elif source == "url" %}
+    This page didn't have structured recipe data the app could read directly, so this is a rough guess based on the page's visible text — much less reliable than a normal import. Check every field carefully, especially ingredients and instructions, which may include stray page content.
   {% else %}
     Imported from your photo via OCR. This is best-effort text recognition split into a rough guess at ingredients and instructions — check every field carefully before saving.
   {% endif %}

@@ -2,6 +2,7 @@ import base64
 import re
 
 import httpx
+from bs4 import BeautifulSoup
 from recipe_scrapers import scrape_html
 
 USER_AGENT = "Mozilla/5.0 (compatible; KitchenCompanion/1.0)"
@@ -48,6 +49,21 @@ def split_ingredient_line(line: str):
     return qty, "", name
 
 
+def _split_ingredients_and_instructions(lines):
+    """Bucket lines into candidate ingredients (start with a quantity) vs.
+    everything else, which is treated as instructions."""
+    ingredient_rows = []
+    instruction_lines = []
+    for line in lines:
+        qty, unit, name = split_ingredient_line(line)
+        looks_like_ingredient = bool(_LEADING_DIGIT_RE.match(line)) and len(line.split()) <= 12
+        if looks_like_ingredient:
+            ingredient_rows.append({"quantity": qty, "unit": unit, "name": name or line})
+        else:
+            instruction_lines.append(line)
+    return ingredient_rows, instruction_lines
+
+
 def _parse_calories(nutrients):
     if not nutrients:
         return None
@@ -65,38 +81,109 @@ def _parse_servings(yields):
     return int(match.group(1)) if match else None
 
 
-def import_from_url(url: str) -> dict:
-    """Fetch a recipe page and extract structured data via schema.org markup.
+def _find_recipe_container(soup: BeautifulSoup):
+    """Best guess at the element holding the actual recipe content, to avoid
+    pulling in nav/sidebar/comments noise when there's no structured data."""
+    for finder in (
+        lambda: soup.find("article"),
+        lambda: soup.find("main"),
+        lambda: soup.find(attrs={"class": re.compile(r"recipe", re.I)}),
+        lambda: soup.find(attrs={"id": re.compile(r"recipe", re.I)}),
+    ):
+        found = finder()
+        if found is not None:
+            return found
+    return soup.body or soup
 
-    Raises on network failure or if no recipe data could be found -- callers
-    should catch broadly and fall back to manual entry.
+
+def _extract_page_title(soup: BeautifulSoup) -> str:
+    h1 = soup.find("h1")
+    if h1 and h1.get_text(strip=True):
+        return h1.get_text(strip=True)
+    if soup.title and soup.title.string:
+        return soup.title.string.strip()
+    return ""
+
+
+def _extract_visible_lines(container) -> list:
+    for tag in container.find_all(
+        ["script", "style", "nav", "header", "footer", "aside", "noscript", "form", "svg", "iframe", "button"]
+    ):
+        tag.decompose()
+    text = container.get_text("\n")
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    deduped = []
+    for line in lines:
+        if not deduped or deduped[-1] != line:
+            deduped.append(line)
+    return deduped
+
+
+def _import_from_url_fallback(html: str, url: str) -> dict:
+    """Heuristic text-based extraction for pages with no schema.org recipe
+    data. Much less reliable than the structured path -- this is a rough
+    starting point for review, not a trustworthy parse."""
+    soup = BeautifulSoup(html, "html.parser")
+    title = _extract_page_title(soup)
+    container = _find_recipe_container(soup)
+    lines = _extract_visible_lines(container)[:200]  # cap to avoid pulling in unrelated page content
+    if not title and lines:
+        title = lines[0]
+
+    ingredient_rows, instruction_lines = _split_ingredients_and_instructions(lines)
+
+    return {
+        "title": title,
+        "ingredients": ingredient_rows,
+        "instructions": "\n".join(instruction_lines),
+        "servings": 1,
+        "prep_time_minutes": None,
+        "calories_per_serving": None,
+        "url": url,
+        "fallback": True,
+    }
+
+
+def import_from_url(url: str) -> dict:
+    """Fetch a recipe page and extract its recipe data.
+
+    Prefers schema.org structured data (reliable, most modern recipe sites
+    have it); falls back to a heuristic guess at the page's visible text
+    when that isn't available, so unsupported pages still return something
+    to review rather than nothing. Only raises on a genuine network/fetch
+    failure -- callers should still catch broadly.
     """
     resp = httpx.get(
         url, timeout=15, follow_redirects=True, headers={"User-Agent": USER_AGENT}
     )
     resp.raise_for_status()
 
-    scraper = scrape_html(resp.text, org_url=url, wild_mode=True)
-
-    ingredients = []
-    for line in scraper.ingredients() or []:
-        qty, unit, name = split_ingredient_line(line)
-        ingredients.append({"quantity": qty, "unit": unit, "name": name})
-
     try:
-        nutrients = scraper.nutrients()
-    except Exception:
-        nutrients = None
+        scraper = scrape_html(resp.text, org_url=url, wild_mode=True)
+        ingredients = []
+        for line in scraper.ingredients() or []:
+            qty, unit, name = split_ingredient_line(line)
+            ingredients.append({"quantity": qty, "unit": unit, "name": name})
+        if not ingredients:
+            raise ValueError("No ingredients found in structured data")
 
-    return {
-        "title": scraper.title() or "",
-        "ingredients": ingredients,
-        "instructions": scraper.instructions() or "",
-        "servings": _parse_servings(scraper.yields()) or 1,
-        "prep_time_minutes": scraper.total_time() or None,
-        "calories_per_serving": _parse_calories(nutrients),
-        "url": url,
-    }
+        try:
+            nutrients = scraper.nutrients()
+        except Exception:
+            nutrients = None
+
+        return {
+            "title": scraper.title() or "",
+            "ingredients": ingredients,
+            "instructions": scraper.instructions() or "",
+            "servings": _parse_servings(scraper.yields()) or 1,
+            "prep_time_minutes": scraper.total_time() or None,
+            "calories_per_serving": _parse_calories(nutrients),
+            "url": url,
+            "fallback": False,
+        }
+    except Exception:
+        return _import_from_url_fallback(resp.text, url)
 
 
 def ocr_image_gcv(api_key: str, image_bytes: bytes) -> str:
@@ -162,17 +249,7 @@ def parse_ocr_text(text: str) -> dict:
         return {"title": "", "ingredients": [], "instructions": ""}
 
     title = lines[0]
-    body_lines = lines[1:]
-
-    ingredient_rows = []
-    instruction_lines = []
-    for line in body_lines:
-        qty, unit, name = split_ingredient_line(line)
-        looks_like_ingredient = bool(_LEADING_DIGIT_RE.match(line)) and len(line.split()) <= 12
-        if looks_like_ingredient:
-            ingredient_rows.append({"quantity": qty, "unit": unit, "name": name or line})
-        else:
-            instruction_lines.append(line)
+    ingredient_rows, instruction_lines = _split_ingredients_and_instructions(lines[1:])
 
     return {
         "title": title,
