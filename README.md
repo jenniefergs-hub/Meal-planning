@@ -34,13 +34,22 @@ Use `http://localhost:8000`, not `127.0.0.1:8000` — it must match the Gmail re
 
 Without a key, the app still works fully for your own pantry + recipe book — you just won't get live online suggestions.
 
-## 4. Add an OCR.space API key (for importing recipes from photos)
+## 4. Add an OCR key (for importing recipes from photos)
 
+Two options — set up one (or both, in which case Google Cloud Vision is used automatically):
+
+**Google Cloud Vision (recommended, more accurate):**
+1. In the same Google Cloud project you'll use for Gmail (Section 5), go to **APIs & Services → Library**, search "Cloud Vision API", and enable it. This requires linking a billing account (card) to the project — the free tier (1,000 images/month) comfortably covers personal use, and you can set a budget alert under Billing as a safety net.
+2. **APIs & Services → Credentials → Create Credentials → API key**. Optionally restrict it to just "Cloud Vision API" under API restrictions.
+3. In the app, go to **Settings**, paste the key into "Google Cloud Vision API key", Save.
+
+**OCR.space (free alternative, no card, lower accuracy):**
 1. Sign up for a free key at https://ocr.space/ocrapi (no credit card required).
-2. In the app, go to **Settings** and paste the key in, then Save.
-3. On the **Recipes** page, click "Import from a URL or photo" → upload a photo.
+2. In the app, go to **Settings**, paste the key into "OCR.space API key", Save.
 
-Without a key, importing from a **URL** still works (it doesn't need this key) — you'll just see a message if you try the photo option without one.
+Either way: on the **Recipes** page, click "Import from a URL or photo" → upload a photo.
+
+Without either key, importing from a **URL** still works (it doesn't need this) — you'll just see a message if you try the photo option without one set up.
 
 ## 5. Connect Gmail (to auto-import grocery receipts)
 

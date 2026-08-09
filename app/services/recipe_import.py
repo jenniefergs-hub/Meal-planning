@@ -1,3 +1,4 @@
+import base64
 import re
 
 import httpx
@@ -98,7 +99,35 @@ def import_from_url(url: str) -> dict:
     }
 
 
-def ocr_image(api_key: str, image_bytes: bytes, filename: str) -> str:
+def ocr_image_gcv(api_key: str, image_bytes: bytes) -> str:
+    """Send an image to Google Cloud Vision (document text detection) and
+    return the recognized text. Generally more accurate than OCR.space,
+    especially on dense or lower-quality photos."""
+    payload = {
+        "requests": [
+            {
+                "image": {"content": base64.b64encode(image_bytes).decode("ascii")},
+                "features": [{"type": "DOCUMENT_TEXT_DETECTION"}],
+            }
+        ]
+    }
+    resp = httpx.post(
+        "https://vision.googleapis.com/v1/images:annotate",
+        params={"key": api_key},
+        json=payload,
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    response = (data.get("responses") or [{}])[0]
+    if "error" in response:
+        raise RuntimeError(response["error"].get("message", "Vision API error"))
+
+    return (response.get("fullTextAnnotation") or {}).get("text", "").strip()
+
+
+def ocr_image_ocrspace(api_key: str, image_bytes: bytes, filename: str) -> str:
     """Send an image to OCR.space and return the recognized text."""
     resp = httpx.post(
         "https://api.ocr.space/parse/image",

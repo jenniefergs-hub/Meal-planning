@@ -43,8 +43,9 @@ async def import_recipe_from_url(request: Request):
 
 @router.post("/recipes/import/photo")
 async def import_recipe_from_photo(request: Request, db: Session = Depends(get_db)):
-    api_key = settings_service.get_setting(db, "ocr_api_key")
-    if not api_key:
+    gcv_key = settings_service.get_setting(db, "gcv_api_key")
+    ocr_space_key = settings_service.get_setting(db, "ocr_api_key")
+    if not gcv_key and not ocr_space_key:
         return RedirectResponse("/settings?error=missing_ocr_key", status_code=303)
 
     form = await request.form()
@@ -54,7 +55,10 @@ async def import_recipe_from_photo(request: Request, db: Session = Depends(get_d
 
     image_bytes = await upload.read()
     try:
-        text = recipe_import.ocr_image(api_key, image_bytes, upload.filename)
+        if gcv_key:
+            text = recipe_import.ocr_image_gcv(gcv_key, image_bytes)
+        else:
+            text = recipe_import.ocr_image_ocrspace(ocr_space_key, image_bytes, upload.filename)
         parsed = recipe_import.parse_ocr_text(text)
     except Exception:
         return RedirectResponse("/recipes/import?error=ocr_failed", status_code=303)

@@ -22,9 +22,26 @@
   <button type="submit">Save</button>
 </form>
 
-<h2>OCR API key (for importing recipes from photos)</h2>
+<h2>Google Cloud Vision API key (for importing recipes from photos, recommended)</h2>
+<p class="hint">
+  Noticeably more accurate than OCR.space below, especially on trickier photos. Uses the same Google Cloud project as Gmail:
+  in <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>, enable the
+  <strong>Cloud Vision API</strong> (APIs &amp; Services → Library → search "Cloud Vision API" → Enable) — this requires
+  linking a billing account (card) to the project, but the free tier (1,000 images/month) comfortably covers personal use,
+  and you can set a budget alert in Billing as a safety net. Then create an API key
+  (APIs &amp; Services → Credentials → Create Credentials → API key) — optionally restrict it to just "Cloud Vision API"
+  under API restrictions — and paste it below.
+</p>
+<form method="post" action="/settings/gcv" class="inline-form">
+  <input type="text" name="api_key" value="{{ gcv_api_key }}" placeholder="Google Cloud Vision API key" style="width: 60%;">
+  <button type="submit">Save</button>
+</form>
+<p class="hint">If both this and the OCR.space key below are set, Google Cloud Vision is used.</p>
+
+<h2>OCR.space API key (for importing recipes from photos, free alternative)</h2>
 <p class="hint">Used to read text from recipe photos. Get a free key (no credit card) at
-  <a href="https://ocr.space/ocrapi" target="_blank" rel="noopener">ocr.space/ocrapi</a>.</p>
+  <a href="https://ocr.space/ocrapi" target="_blank" rel="noopener">ocr.space/ocrapi</a>. Works without a Google Cloud
+  Vision key, but is generally less accurate.</p>
 <form method="post" action="/settings/ocr" class="inline-form">
   <input type="text" name="api_key" value="{{ ocr_api_key }}" placeholder="OCR.space API key" style="width: 60%;">
   <button type="submit">Save</button>
