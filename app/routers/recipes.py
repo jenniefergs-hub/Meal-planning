@@ -72,13 +72,8 @@ async def import_recipe_from_photo(request: Request, db: Session = Depends(get_d
     )
 
 
-@router.post("/recipes/add")
-async def add_recipe(request: Request, db: Session = Depends(get_db)):
-    form = await request.form()
+def _parse_recipe_form(form) -> dict:
     title = (form.get("title") or "").strip()
-    if not title:
-        return RedirectResponse("/recipes", status_code=303)
-
     source_type = form.get("source_type") or "book"
     book_name = (form.get("book_name") or "").strip() or None
     url = (form.get("url") or "").strip() or None
@@ -97,29 +92,49 @@ async def add_recipe(request: Request, db: Session = Depends(get_db)):
     prep_raw = form.get("prep_time_minutes")
     prep_time = int(prep_raw) if prep_raw and str(prep_raw).isdigit() else None
 
-    recipe = models.Recipe(
-        title=title,
-        source_type=source_type,
-        book_name=book_name,
-        url=url,
-        instructions=instructions,
-        servings=servings,
-        calories_per_serving=calories,
-        prep_time_minutes=prep_time,
-    )
-    db.add(recipe)
-    db.flush()
-
+    ingredients = []
     names = form.getlist("ing_name")
     qtys = form.getlist("ing_qty")
     units = form.getlist("ing_unit")
     for n, q, u in zip(names, qtys, units):
         if n and n.strip():
-            db.add(
-                models.RecipeIngredient(
-                    recipe_id=recipe.id, name=n.strip(), quantity=q or None, unit=u or None
-                )
-            )
+            ingredients.append({"name": n.strip(), "quantity": q or None, "unit": u or None})
+
+    return {
+        "title": title,
+        "source_type": source_type,
+        "book_name": book_name,
+        "url": url,
+        "instructions": instructions,
+        "servings": servings,
+        "calories_per_serving": calories,
+        "prep_time_minutes": prep_time,
+        "ingredients": ingredients,
+    }
+
+
+@router.post("/recipes/add")
+async def add_recipe(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = _parse_recipe_form(form)
+    if not data["title"]:
+        return RedirectResponse("/recipes", status_code=303)
+
+    recipe = models.Recipe(
+        title=data["title"],
+        source_type=data["source_type"],
+        book_name=data["book_name"],
+        url=data["url"],
+        instructions=data["instructions"],
+        servings=data["servings"],
+        calories_per_serving=data["calories_per_serving"],
+        prep_time_minutes=data["prep_time_minutes"],
+    )
+    db.add(recipe)
+    db.flush()
+
+    for ing in data["ingredients"]:
+        db.add(models.RecipeIngredient(recipe_id=recipe.id, **ing))
 
     db.commit()
     return RedirectResponse(f"/recipes/{recipe.id}", status_code=303)
@@ -153,6 +168,49 @@ def delete_recipe(recipe_id: int, db: Session = Depends(get_db)):
         db.delete(recipe)
         db.commit()
     return RedirectResponse("/recipes", status_code=303)
+
+
+@router.get("/recipes/{recipe_id}/edit")
+def edit_recipe_page(recipe_id: int, request: Request, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "recipe_edit.html",
+        {"recipe": recipe, "error": request.query_params.get("error")},
+    )
+
+
+@router.post("/recipes/{recipe_id}/edit")
+async def edit_recipe_submit(recipe_id: int, request: Request, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+
+    form = await request.form()
+    data = _parse_recipe_form(form)
+    if not data["title"]:
+        return RedirectResponse(f"/recipes/{recipe_id}/edit?error=missing_title", status_code=303)
+
+    recipe.title = data["title"]
+    recipe.source_type = data["source_type"]
+    recipe.book_name = data["book_name"]
+    recipe.url = data["url"]
+    recipe.instructions = data["instructions"]
+    recipe.servings = data["servings"]
+    recipe.calories_per_serving = data["calories_per_serving"]
+    recipe.prep_time_minutes = data["prep_time_minutes"]
+
+    # Replace the ingredient rows wholesale -- the form doesn't track which
+    # existing row is which, so this is simpler and just as correct as a diff.
+    recipe.ingredients.clear()
+    db.flush()
+    for ing in data["ingredients"]:
+        recipe.ingredients.append(models.RecipeIngredient(**ing))
+
+    db.commit()
+    return RedirectResponse(f"/recipes/{recipe_id}", status_code=303)
 
 
 @router.get("/recipes/{recipe_id}/cook")

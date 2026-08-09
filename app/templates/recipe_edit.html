@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ recipe.title }}{% endblock %}
+{% block content %}
+<a href="/recipes/{{ recipe.id }}">&larr; Back to {{ recipe.title }}</a>
+<h1>Edit recipe</h1>
+
+{% if error == "missing_title" %}<p class="error">Title is required.</p>{% endif %}
+
+<form method="post" action="/recipes/{{ recipe.id }}/edit" class="add-recipe" style="display: block;">
+  <label>Title <input type="text" name="title" value="{{ recipe.title }}" required></label>
+  <label>Source
+    <select name="source_type">
+      <option value="book" {% if recipe.source_type == "book" %}selected{% endif %}>From a book I own</option>
+      <option value="manual_online" {% if recipe.source_type == "manual_online" %}selected{% endif %}>Online recipe</option>
+    </select>
+  </label>
+  <label>Book name (if applicable) <input type="text" name="book_name" value="{{ recipe.book_name or '' }}"></label>
+  <label>URL (if online) <input type="url" name="url" value="{{ recipe.url or '' }}"></label>
+  <label>Servings <input type="number" name="servings" value="{{ recipe.servings }}" min="1"></label>
+  <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" value="{{ recipe.calories_per_serving }}" required></label>
+  <label>Prep time (minutes) <input type="number" name="prep_time_minutes" min="0" value="{{ recipe.prep_time_minutes or '' }}"></label>
+  <label>Instructions <textarea name="instructions" rows="8">{{ recipe.instructions or '' }}</textarea></label>
+
+  <h3>Ingredients</h3>
+  <div id="ingredient-rows">
+  {% for ri in recipe.ingredients %}
+    <div class="ing-row">
+      <input type="text" name="ing_name" placeholder="Ingredient name" value="{{ ri.name }}">
+      <input type="text" name="ing_qty" placeholder="Qty" value="{{ ri.quantity or '' }}">
+      <input type="text" name="ing_unit" placeholder="Unit" value="{{ ri.unit or '' }}">
+    </div>
+  {% else %}
+    <div class="ing-row">
+      <input type="text" name="ing_name" placeholder="Ingredient name">
+      <input type="text" name="ing_qty" placeholder="Qty">
+      <input type="text" name="ing_unit" placeholder="Unit">
+    </div>
+  {% endfor %}
+  </div>
+  <button type="button" id="add-ing-row">+ Add ingredient</button>
+  <br><br>
+  <button type="submit">Save changes</button>
+</form>
+
+<script src="/static/app.js"></script>
+{% endblock %}

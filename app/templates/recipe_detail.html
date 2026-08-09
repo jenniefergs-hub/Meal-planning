@@ -3,6 +3,7 @@
 {% block content %}
 <a href="/recipes">&larr; Back to recipes</a>
 <h1>{{ recipe.title }}</h1>
+<p><a href="/recipes/{{ recipe.id }}/edit">Edit recipe</a></p>
 <p>
   {% if recipe.book_name %}From book: <strong>{{ recipe.book_name }}</strong>{% endif %}
   {% if recipe.url %} &middot; <a href="{{ recipe.url }}" target="_blank" rel="noopener">Original recipe link</a>{% endif %}
