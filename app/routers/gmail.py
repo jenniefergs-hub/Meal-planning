@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/gmail")
 def gmail_page(request: Request, db: Session = Depends(get_db)):
-    connected = gmail_service.is_connected()
+    connected = gmail_service.is_connected(db)
     query = settings_service.get_setting(db, "gmail_query") or gmail_service.DEFAULT_QUERY
     pending = (
         db.query(models.PendingReceiptItem)
@@ -31,7 +31,7 @@ def gmail_page(request: Request, db: Session = Depends(get_db)):
             "query": query,
             "pending": pending,
             "last_sync": last_sync,
-            "has_client_secret": gmail_service.has_client_secret(),
+            "has_client_secret": gmail_service.has_client_secret(db),
             "error": request.query_params.get("error"),
             "synced": request.query_params.get("synced"),
         },
@@ -39,22 +39,25 @@ def gmail_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/gmail/authorize")
-def gmail_authorize(request: Request):
-    if not gmail_service.has_client_secret():
+def gmail_authorize(request: Request, db: Session = Depends(get_db)):
+    if not gmail_service.has_client_secret(db):
         return RedirectResponse("/settings?error=missing_client_secret")
     redirect_uri = str(request.url_for("gmail_oauth2callback"))
-    auth_url, _state = gmail_service.build_auth_url(redirect_uri)
+    auth_url, _state = gmail_service.build_auth_url(db, redirect_uri)
     return RedirectResponse(auth_url)
 
 
 @router.get("/gmail/oauth2callback", name="gmail_oauth2callback")
-def gmail_oauth2callback(request: Request):
+def gmail_oauth2callback(request: Request, db: Session = Depends(get_db)):
     error = request.query_params.get("error")
     code = request.query_params.get("code")
     if error or not code:
         return RedirectResponse(f"/gmail?error={error or 'missing_code'}")
     redirect_uri = str(request.url_for("gmail_oauth2callback"))
-    gmail_service.exchange_code(redirect_uri, code)
+    try:
+        gmail_service.exchange_code(db, redirect_uri, code)
+    except Exception:
+        return RedirectResponse("/gmail?error=connect_failed")
     return RedirectResponse("/gmail")
 
 
@@ -66,12 +69,12 @@ def update_query(query: str = Form(...), db: Session = Depends(get_db)):
 
 @router.post("/gmail/sync")
 def gmail_sync(db: Session = Depends(get_db)):
-    if not gmail_service.is_connected():
+    if not gmail_service.is_connected(db):
         return RedirectResponse("/gmail?error=not_connected", status_code=303)
 
     query = settings_service.get_setting(db, "gmail_query") or gmail_service.DEFAULT_QUERY
     try:
-        messages = gmail_service.fetch_receipt_messages(query, max_results=25)
+        messages = gmail_service.fetch_receipt_messages(db, query, max_results=25)
     except Exception:
         return RedirectResponse("/gmail?error=sync_failed", status_code=303)
 

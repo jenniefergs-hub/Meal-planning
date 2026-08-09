@@ -3,7 +3,15 @@
 {% block content %}
 <h1>Email Import</h1>
 
-{% if error %}<p class="error">Something went wrong: {{ error }}</p>{% endif %}
+{% if error == "connect_failed" %}
+  <p class="error">Couldn't connect to Gmail. Double-check the client JSON pasted into Settings is complete and try again.</p>
+{% elif error == "sync_failed" %}
+  <p class="error">Couldn't sync with Gmail. Try reconnecting from this page, or check back shortly.</p>
+{% elif error == "not_connected" %}
+  <p class="error">Gmail isn't connected yet.</p>
+{% elif error %}
+  <p class="error">Something went wrong: {{ error }}</p>
+{% endif %}
 {% if synced is not none %}<p class="success">Sync complete &mdash; {{ synced }} new item(s) found for review.</p>{% endif %}
 
 {% if not has_client_secret %}

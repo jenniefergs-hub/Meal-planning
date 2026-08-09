@@ -19,7 +19,7 @@ def settings_page(request: Request, db: Session = Depends(get_db)):
         {
             "api_key": api_key,
             "household_members": household_members,
-            "has_client_secret": gmail_service.has_client_secret(),
+            "has_client_secret": gmail_service.has_client_secret(db),
             "error": request.query_params.get("error"),
             "saved": request.query_params.get("saved"),
         },
@@ -33,9 +33,9 @@ def save_spoonacular(api_key: str = Form(""), db: Session = Depends(get_db)):
 
 
 @router.post("/settings/gmail_client_secret")
-def save_client_secret(client_secret_json: str = Form(...)):
+def save_client_secret(client_secret_json: str = Form(...), db: Session = Depends(get_db)):
     try:
-        gmail_service.save_client_secret(client_secret_json)
+        gmail_service.save_client_secret(db, client_secret_json)
     except Exception:
         return RedirectResponse("/settings?error=invalid_json", status_code=303)
     return RedirectResponse("/settings?saved=1", status_code=303)

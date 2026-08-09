@@ -1,11 +1,13 @@
 import base64
 import json
-from pathlib import Path
 
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from sqlalchemy.orm import Session
+
+from . import settings_service
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 DEFAULT_QUERY = (
@@ -13,63 +15,70 @@ DEFAULT_QUERY = (
     'OR subject:receipt) newer_than:180d'
 )
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-CREDENTIALS_DIR = ROOT_DIR / "credentials"
-CREDENTIALS_DIR.mkdir(exist_ok=True)
-CLIENT_SECRET_PATH = CREDENTIALS_DIR / "client_secret.json"
-TOKEN_PATH = CREDENTIALS_DIR / "token.json"
+# Stored as AppSetting rows rather than local files: hosts like Render's
+# free tier have an ephemeral filesystem that can reset between requests,
+# which silently broke file-based storage.
+CLIENT_SECRET_SETTING_KEY = "gmail_client_secret_json"
+TOKEN_SETTING_KEY = "gmail_token_json"
 
 
-def has_client_secret() -> bool:
-    return CLIENT_SECRET_PATH.exists()
+def has_client_secret(db: Session) -> bool:
+    return bool(settings_service.get_setting(db, CLIENT_SECRET_SETTING_KEY))
 
 
-def save_client_secret(json_text: str) -> None:
+def save_client_secret(db: Session, json_text: str) -> None:
     data = json.loads(json_text)  # validates it's well-formed JSON
-    CLIENT_SECRET_PATH.write_text(json.dumps(data))
+    settings_service.set_setting(db, CLIENT_SECRET_SETTING_KEY, json.dumps(data))
 
 
-def _get_flow(redirect_uri: str) -> Flow:
-    return Flow.from_client_secrets_file(
-        str(CLIENT_SECRET_PATH), scopes=SCOPES, redirect_uri=redirect_uri
-    )
+def _get_client_config(db: Session) -> dict:
+    raw = settings_service.get_setting(db, CLIENT_SECRET_SETTING_KEY)
+    if not raw:
+        raise RuntimeError("Gmail client credentials are not configured")
+    return json.loads(raw)
 
 
-def build_auth_url(redirect_uri: str):
-    flow = _get_flow(redirect_uri)
+def _get_flow(db: Session, redirect_uri: str) -> Flow:
+    return Flow.from_client_config(_get_client_config(db), scopes=SCOPES, redirect_uri=redirect_uri)
+
+
+def build_auth_url(db: Session, redirect_uri: str):
+    flow = _get_flow(db, redirect_uri)
     return flow.authorization_url(
         access_type="offline", include_granted_scopes="true", prompt="consent"
     )
 
 
-def exchange_code(redirect_uri: str, code: str) -> Credentials:
-    flow = _get_flow(redirect_uri)
+def exchange_code(db: Session, redirect_uri: str, code: str) -> Credentials:
+    flow = _get_flow(db, redirect_uri)
     flow.fetch_token(code=code)
     creds = flow.credentials
-    _save_credentials(creds)
+    _save_credentials(db, creds)
     return creds
 
 
-def _save_credentials(creds: Credentials) -> None:
-    TOKEN_PATH.write_text(creds.to_json())
+def _save_credentials(db: Session, creds: Credentials) -> None:
+    settings_service.set_setting(db, TOKEN_SETTING_KEY, creds.to_json())
 
 
-def load_credentials():
-    if not TOKEN_PATH.exists():
+def load_credentials(db: Session):
+    raw = settings_service.get_setting(db, TOKEN_SETTING_KEY)
+    if not raw:
         return None
-    creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+    info = json.loads(raw)
+    creds = Credentials.from_authorized_user_info(info, SCOPES)
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(GoogleRequest())
-        _save_credentials(creds)
+        _save_credentials(db, creds)
     return creds
 
 
-def is_connected() -> bool:
-    return load_credentials() is not None
+def is_connected(db: Session) -> bool:
+    return load_credentials(db) is not None
 
 
-def fetch_receipt_messages(query: str, max_results: int = 25):
-    creds = load_credentials()
+def fetch_receipt_messages(db: Session, query: str, max_results: int = 25):
+    creds = load_credentials(db)
     if not creds:
         raise RuntimeError("Gmail is not connected")
     service = build("gmail", "v1", credentials=creds)
