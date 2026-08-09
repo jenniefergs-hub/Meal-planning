@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Kitchen Companion{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="cards">
+  <a class="card" href="/pantry"><strong>{{ pantry_count }}</strong><span>Pantry ingredients</span></a>
+  <a class="card" href="/recipes"><strong>{{ recipe_count }}</strong><span>Saved recipes</span></a>
+  <a class="card" href="/gmail"><strong>{{ pending_count }}</strong><span>Receipt items to review</span></a>
+  <a class="card" href="/recommendations"><strong>&rarr;</strong><span>Get recipe recommendations</span></a>
+</div>
+<p class="hint">
+  Add ingredients manually on the Pantry page, or connect Gmail to pull items from your grocery
+  receipts. Add your book recipes on the Recipes page (calories required), then head to
+  Recommendations to see what you can cook with what you have.
+</p>
+{% endblock %}

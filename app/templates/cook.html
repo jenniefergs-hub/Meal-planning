@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Cooked {{ recipe.title }}{% endblock %}
+{% block content %}
+<a href="/recipes/{{ recipe.id }}">&larr; Back to {{ recipe.title }}</a>
+<h1>Mark "{{ recipe.title }}" as cooked</h1>
+<p class="hint">
+  These pantry items look like they match this recipe's ingredients. Untick anything you didn't
+  actually use up (e.g. you had plenty left over), then confirm to remove the rest from your pantry.
+</p>
+
+<form method="post" action="/recipes/{{ recipe.id }}/cook">
+  <table class="table">
+    <thead><tr><th></th><th>Pantry item</th><th>Qty</th><th>Unit</th></tr></thead>
+    <tbody>
+    {% for item in matched_items %}
+      <tr>
+        <td><input type="checkbox" name="remove_ids" value="{{ item.id }}" checked></td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.quantity or "" }}</td>
+        <td>{{ item.unit or "" }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">None of this recipe's ingredients were found in your pantry.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if unmatched_names %}
+  <p class="hint">Not in your pantry (nothing to remove for these): {{ unmatched_names|join(", ") }}</p>
+  {% endif %}
+
+  <button type="submit">Update pantry</button>
+</form>
+{% endblock %}

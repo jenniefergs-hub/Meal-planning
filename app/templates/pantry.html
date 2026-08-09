@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Pantry{% endblock %}
+{% block content %}
+<h1>Pantry</h1>
+
+<form method="post" action="/pantry/add" class="inline-form">
+  <input type="text" name="name" placeholder="Ingredient name" required>
+  <input type="text" name="quantity" placeholder="Qty">
+  <input type="text" name="unit" placeholder="Unit (g, cups...)">
+  <input type="text" name="category" placeholder="Category">
+  <input type="date" name="expiry_date">
+  <button type="submit">Add</button>
+</form>
+
+<table class="table">
+  <thead>
+    <tr><th>Name</th><th>Qty</th><th>Unit</th><th>Category</th><th>Source</th><th>Expiry</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td>{{ item.name }}</td>
+      <td>{{ item.quantity or "" }}</td>
+      <td>{{ item.unit or "" }}</td>
+      <td>{{ item.category or "" }}</td>
+      <td><span class="badge badge-{{ item.source }}">{{ item.source }}</span></td>
+      <td>{{ item.expiry_date.strftime("%Y-%m-%d") if item.expiry_date else "" }}</td>
+      <td>
+        <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove this ingredient?');">
+          <button type="submit" class="danger">Remove</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7">No ingredients yet. Add some above, or import from Gmail receipts.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
