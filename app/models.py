@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -33,9 +33,14 @@ class Recipe(Base):
     calories_per_serving = Column(Float, nullable=False)
     prep_time_minutes = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    times_cooked = Column(Integer, default=0)
+    last_cooked_at = Column(DateTime, nullable=True)
 
     ingredients = relationship(
         "RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan"
+    )
+    ratings = relationship(
+        "RecipeRating", back_populates="recipe", cascade="all, delete-orphan"
     )
 
 
@@ -49,6 +54,19 @@ class RecipeIngredient(Base):
     unit = Column(String, nullable=True)
 
     recipe = relationship("Recipe", back_populates="ingredients")
+
+
+class RecipeRating(Base):
+    __tablename__ = "recipe_ratings"
+    __table_args__ = (UniqueConstraint("recipe_id", "member_name", name="uq_recipe_member"),)
+
+    id = Column(Integer, primary_key=True)
+    recipe_id = Column(Integer, ForeignKey("recipes.id"))
+    member_name = Column(String, nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5
+    rated_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", back_populates="ratings")
 
 
 class GmailProcessedMessage(Base):

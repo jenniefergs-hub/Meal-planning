@@ -5,6 +5,15 @@
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 {% if saved %}<p class="success">Saved.</p>{% endif %}
 
+<h2>Household members</h2>
+<p class="hint">Names used when rating recipes (up to 4 people).</p>
+<form method="post" action="/settings/household" class="inline-form">
+  {% for member in household_members %}
+  <input type="text" name="member_{{ loop.index0 }}" value="{{ member }}" placeholder="Person {{ loop.index }}">
+  {% endfor %}
+  <button type="submit">Save names</button>
+</form>
+
 <h2>Spoonacular API key</h2>
 <p class="hint">Used for online recipe recommendations with calories. Get a free key at
   <a href="https://spoonacular.com/food-api" target="_blank" rel="noopener">spoonacular.com/food-api</a>.</p>

@@ -12,6 +12,15 @@
   &middot; Servings: {{ recipe.servings }}
   {% if recipe.prep_time_minutes %} &middot; Prep: {{ recipe.prep_time_minutes }} min{% endif %}
 </p>
+<p class="hint">
+  {% if recipe.times_cooked %}
+    Cooked {{ recipe.times_cooked }} time{{ "s" if recipe.times_cooked != 1 else "" }}{% if recipe.last_cooked_at %}, last on {{ recipe.last_cooked_at.strftime("%Y-%m-%d") }}{% endif %}.
+  {% else %}
+    Not cooked yet.
+  {% endif %}
+</p>
+
+{% if cooked %}<p class="success">Pantry updated.</p>{% endif %}
 
 <h3>Ingredients</h3>
 <ul>
@@ -24,6 +33,31 @@
 <h3>Instructions</h3>
 <p class="instructions">{{ recipe.instructions }}</p>
 {% endif %}
+
+<a href="/recipes/{{ recipe.id }}/cook"><button>I made this &mdash; update my pantry</button></a>
+
+<h3>Ratings</h3>
+<p class="hint">
+  {% if recipe.ratings %}
+    Average: {{ "%.1f"|format((recipe.ratings|sum(attribute="rating")) / recipe.ratings|length) }} / 5
+    ({{ recipe.ratings|length }}/4 rated)
+  {% else %}
+    Not rated yet.
+  {% endif %}
+</p>
+<form method="post" action="/recipes/{{ recipe.id }}/ratings" class="add-recipe">
+  {% for member in household_members %}
+  <label>{{ member }}
+    <select name="rating_{{ loop.index0 }}">
+      <option value="">No rating</option>
+      {% for n in [1, 2, 3, 4, 5] %}
+      <option value="{{ n }}" {% if ratings_by_member.get(member) == n %}selected{% endif %}>{{ n }} {{ "star" if n == 1 else "stars" }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endfor %}
+  <button type="submit">Save ratings</button>
+</form>
 
 <form method="post" action="/recipes/{{ recipe.id }}/delete" onsubmit="return confirm('Delete this recipe?');">
   <button type="submit" class="danger">Delete recipe</button>

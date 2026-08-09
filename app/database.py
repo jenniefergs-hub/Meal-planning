@@ -1,7 +1,6 @@
-import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -20,3 +19,20 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def run_light_migrations():
+    """Add columns introduced after a table already existed on disk.
+
+    create_all() only creates missing tables, so pre-existing SQLite files
+    need their new columns added by hand.
+    """
+    inspector = inspect(engine)
+    if "recipes" not in inspector.get_table_names():
+        return
+    existing_cols = {c["name"] for c in inspector.get_columns("recipes")}
+    with engine.begin() as conn:
+        if "times_cooked" not in existing_cols:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN times_cooked INTEGER DEFAULT 0"))
+        if "last_cooked_at" not in existing_cols:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN last_cooked_at DATETIME"))

@@ -9,11 +9,12 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from . import models
-from .database import Base, engine, get_db
+from .database import Base, engine, get_db, run_light_migrations
 from .routers import gmail, ingredients, recipes, recommendations, settings_router
 from .templates_config import templates
 
 Base.metadata.create_all(bind=engine)
+run_light_migrations()
 
 BASE_DIR = Path(__file__).resolve().parent
 

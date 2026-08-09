@@ -40,6 +40,9 @@
     <h3>{{ r.title }}</h3>
     <p>{% if r.book_name %}{{ r.book_name }}{% elif r.url %}Online recipe{% else %}&nbsp;{% endif %}</p>
     <p class="calories">{{ "%.0f"|format(r.calories_per_serving) }} kcal / serving</p>
+    <p class="rating">
+      {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
+    </p>
   </a>
 {% else %}
   <p>No recipes saved yet. Add one above.</p>

@@ -55,13 +55,22 @@ Click **Sync receipts now** to fetch and parse matching emails. Parsed line item
 ## 5. Using the app
 
 - **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts.
-- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required) or manually add an online recipe you like (paste the URL).
-- **Recommendations**: ranks your saved recipes by percentage of ingredients you currently have in your pantry, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each.
-- **Settings**: API key and Gmail credentials.
+- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required) or manually add an online recipe you like (paste the URL). On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
+- **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each.
+- **Settings**: household member names, Spoonacular API key, and Gmail credentials.
+
+### Marking a recipe as cooked
+
+On a recipe's page, click **"I made this — update my pantry"**. The app shows you which pantry items match the recipe's ingredients, pre-ticked; untick anything you didn't actually use up, then confirm. Ticked items are removed from your pantry entirely (quantities aren't tracked precisely enough to subtract partial amounts, e.g. "used 2 of the 6 eggs"), and the recipe's cooked count/date is updated.
+
+### Ratings
+
+Set up to 4 household member names in **Settings**. Each recipe page lets every member rate it 1–5 stars. Ratings feed into the **Recommendations** ranking (65% ingredient match, 35% average rating), so recipes your household rates highly get suggested more often; unrated recipes are scored neutrally so they aren't buried.
 
 ## Notes and limitations
 
 - **Receipt parsing is heuristic.** Grocery receipt emails have no standard format, so the parser looks for common patterns (quantity/name/price lines, HTML table rows) and flags blacklist words (tax, tip, delivery, total, etc.). It won't be perfect — that's why parsed items always go through the review queue before becoming pantry ingredients.
 - **Calories for book recipes are entered by you** when you add the recipe, since there's no way to automatically look up calories for a recipe from a physical cookbook. Calories for online (Spoonacular) recommendations are fetched automatically.
-- This is a single-user, local-only app — there's no login system. Don't expose it to the public internet as-is.
+- **"Cooked" pantry updates are all-or-nothing per item** — the app removes matched pantry ingredients entirely rather than subtracting partial quantities, since quantities are stored as free text (e.g. "2 lb", "a bunch") that can't be reliably subtracted.
+- This is a single-user, local-only app — there's no login system, and ratings are attributed by household member name, not authenticated accounts. Don't expose it to the public internet as-is.
 - `data/` and `credentials/` (your Gmail token and OAuth client secret) are gitignored and never committed.

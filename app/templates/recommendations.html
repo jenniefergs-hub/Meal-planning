@@ -5,12 +5,14 @@
 <p>Based on {{ pantry_count }} pantry ingredient(s).</p>
 
 <h2>From your recipes</h2>
+<p class="hint">Ranked by a mix of how many ingredients you have on hand and how well your household has rated each recipe.</p>
 <div class="recipe-grid">
 {% for s in scored %}
   <a class="recipe-card" href="/recipes/{{ s.recipe.id }}">
     <h3>{{ s.recipe.title }}</h3>
     <p>{{ s.match_pct }}% of ingredients on hand ({{ s.matched_count }}/{{ s.total_count }})</p>
     <p class="calories">{{ "%.0f"|format(s.recipe.calories_per_serving) }} kcal / serving</p>
+    <p class="rating">{% if s.avg_rating %}★ {{ "%.1f"|format(s.avg_rating) }} ({{ s.rating_count }}/4){% else %}Not rated{% endif %}</p>
     {% if s.missing %}<p class="missing">Missing: {{ s.missing|join(", ") }}</p>{% endif %}
   </a>
 {% else %}
