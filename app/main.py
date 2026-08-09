@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from . import models
+from .auth_middleware import BasicAuthMiddleware
 from .database import Base, engine, get_db, run_light_migrations
 from .routers import gmail, ingredients, recipes, recommendations, settings_router
 from .templates_config import templates
@@ -19,6 +20,17 @@ run_light_migrations()
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="Kitchen Companion")
+
+# Only enforced when APP_PASSWORD is set (e.g. on a public deployment) --
+# local development with no env vars set stays password-free.
+_app_password = os.environ.get("APP_PASSWORD")
+if _app_password:
+    app.add_middleware(
+        BasicAuthMiddleware,
+        username=os.environ.get("APP_USERNAME", "admin"),
+        password=_app_password,
+    )
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 app.include_router(ingredients.router)

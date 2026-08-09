@@ -1,6 +1,6 @@
 # Kitchen Companion
 
-A local web app that:
+A web app (run locally on a computer, or deployed for free so it's reachable from any browser — see Section 6) that:
 
 - Tracks ingredients you have on hand (added manually, or pulled from grocery receipt emails via Gmail).
 - Stores recipes from books you own (with calories, ingredients, instructions).
@@ -67,10 +67,43 @@ On a recipe's page, click **"I made this — update my pantry"**. The app shows 
 
 Set up to 4 household member names in **Settings**. Each recipe page lets every member rate it 1–5 stars. Ratings feed into the **Recommendations** ranking (65% ingredient match, 35% average rating), so recipes your household rates highly get suggested more often; unrated recipes are scored neutrally so they aren't buried.
 
+## 6. Deploying online (no computer needed, e.g. phone-only access)
+
+If you don't have a computer, deploy the app to [Render](https://render.com)'s free tier instead of running it locally — the whole setup is done through a web browser, so it works from Safari on your iPhone.
+
+### One-time setup
+
+1. Go to https://render.com and sign up (free, no credit card required for the free tier).
+2. Click **New +** → **Web Service**, connect your GitHub account, and select this repository (and branch).
+3. Fill in:
+   - **Runtime**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=*`
+   - **Instance Type**: Free
+4. Under **Environment Variables**, add:
+   - `APP_PASSWORD` — a password you choose. **Required** — without it, anyone with the URL can open the app, since it's now on the public internet rather than your own computer.
+   - `APP_USERNAME` — optional, defaults to `admin` if you skip it.
+5. Click **Create Web Service**. The first build/deploy takes a few minutes; you'll get a URL like `https://kitchen-companion-xxxx.onrender.com`.
+6. Open that URL in Safari — it'll prompt for the username/password you just set in step 4.
+
+### Updating Spoonacular and Gmail for the new address
+
+- **Spoonacular**: unchanged — go to the deployed app's Settings page and paste your key in.
+- **Gmail**: `localhost` no longer applies, so add a second redirect URI:
+  1. In Google Cloud Console → your OAuth client → add authorized redirect URI: `https://<your-render-url>/gmail/oauth2callback`
+  2. On the deployed app's Settings page, paste the same client JSON and Save.
+  3. Go to Email Import → Connect Gmail as before.
+
+### Free-tier caveats
+
+- **Sleeps when idle**: after 15 minutes with no visits, Render spins the app down. The next visit takes 30-60 seconds to wake it back up — that's expected, not broken.
+- **Data resets on redeploy**: the free tier's disk isn't persistent across deploys, so pantry/recipe data is wiped whenever new code is pushed (not on ordinary sleep/wake cycles — only on an actual deploy). If that becomes a problem, ask for free persistent storage (e.g. via Neon's free Postgres tier) to be added — left out of this first pass to keep the initial deployment simple.
+
 ## Notes and limitations
 
 - **Receipt parsing is heuristic.** Grocery receipt emails have no standard format, so the parser looks for common patterns (quantity/name/price lines, HTML table rows) and flags blacklist words (tax, tip, delivery, total, etc.). It won't be perfect — that's why parsed items always go through the review queue before becoming pantry ingredients.
 - **Calories for book recipes are entered by you** when you add the recipe, since there's no way to automatically look up calories for a recipe from a physical cookbook. Calories for online (Spoonacular) recommendations are fetched automatically.
 - **"Cooked" pantry updates are all-or-nothing per item** — the app removes matched pantry ingredients entirely rather than subtracting partial quantities, since quantities are stored as free text (e.g. "2 lb", "a bunch") that can't be reliably subtracted.
-- This is a single-user, local-only app — there's no login system, and ratings are attributed by household member name, not authenticated accounts. Don't expose it to the public internet as-is.
+- This is a single-user app — ratings are attributed by household member name, not authenticated accounts, and there's only one shared password for the whole app (see the deployment section if running it publicly), not per-person logins.
 - `data/` and `credentials/` (your Gmail token and OAuth client secret) are gitignored and never committed.
+- If deployed publicly (Section 6), set `APP_PASSWORD` (and optionally `APP_USERNAME`) as environment variables on the host — never commit them to the repo. Locally, if these aren't set, the app runs without a password prompt, same as before.
