@@ -89,6 +89,10 @@ Either way, you land on a pre-filled version of the "Add a recipe" form before a
 
 On a recipe's page, click **"Calculate calories from ingredients"** (needs a Spoonacular key from Section 3). The app looks up nutrition for each ingredient by name and quantity, sums the calories, and divides by the recipe's servings. You'll see a breakdown of what was matched (and a warning if any ingredient couldn't be matched, which counts as 0 calories in the total) — if any ingredient's figure looks wrong, edit it right there and the total and per-serving numbers recalculate live; you can also type a final number directly. Nothing is applied to the recipe until you click Save. Handy for recipes imported from a photo, or any recipe where you don't already know the calorie count.
 
+### Emailing a recipe
+
+Click **"Email this recipe"** on any recipe's page — it opens your device's own mail app with the recipe (title, servings, calories, ingredients, and instructions) pre-filled as the subject and body; you just add a recipient and hit send. This uses a plain `mailto:` link rather than sending from the app itself, so it needs no setup, no API key, and doesn't touch your Gmail connection at all.
+
 ### Marking a recipe as cooked
 
 On a recipe's page, click **"I made this — update my pantry"**. The app shows you which pantry items match the recipe's ingredients, pre-ticked; untick anything you didn't actually use up, then confirm. Ticked items are removed from your pantry entirely (quantities aren't tracked precisely enough to subtract partial amounts, e.g. "used 2 of the 6 eggs"), and the recipe's cooked count/date is updated.

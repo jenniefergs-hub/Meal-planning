@@ -159,6 +159,35 @@ async def add_recipe(request: Request, db: Session = Depends(get_db)):
     return RedirectResponse(f"/recipes/{recipe.id}", status_code=303)
 
 
+def _build_recipe_email_body(recipe) -> str:
+    lines = []
+    if recipe.book_name:
+        lines.append(f"From: {recipe.book_name}")
+    lines.append(f"Servings: {recipe.servings}")
+    lines.append(f"Calories per serving: {recipe.calories_per_serving:.0f} kcal")
+    if recipe.prep_time_minutes:
+        lines.append(f"Prep time: {recipe.prep_time_minutes} min")
+
+    lines.append("")
+    lines.append("Ingredients:")
+    for ri in recipe.ingredients:
+        parts = [p for p in (ri.quantity, ri.unit, ri.name) if p]
+        lines.append(f"- {' '.join(parts)}")
+
+    if recipe.instructions:
+        lines.append("")
+        lines.append("Instructions:")
+        lines.append(recipe.instructions)
+
+    if recipe.url:
+        lines.append("")
+        lines.append(f"Original recipe: {recipe.url}")
+
+    lines.append("")
+    lines.append("Sent from Kitchen Companion")
+    return "\n".join(lines)
+
+
 @router.get("/recipes/{recipe_id}")
 def recipe_detail(recipe_id: int, request: Request, db: Session = Depends(get_db)):
     recipe = db.get(models.Recipe, recipe_id)
@@ -176,6 +205,7 @@ def recipe_detail(recipe_id: int, request: Request, db: Session = Depends(get_db
             "cooked": request.query_params.get("cooked"),
             "error": request.query_params.get("error"),
             "calories_applied": request.query_params.get("calories_applied"),
+            "email_body": _build_recipe_email_body(recipe),
         },
     )
 
