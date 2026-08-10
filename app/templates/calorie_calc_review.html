@@ -28,9 +28,11 @@
   = <strong>{{ result.per_serving }} kcal per serving</strong>
 </p>
 
-<form method="post" action="/recipes/{{ recipe.id }}/apply_calories">
-  <input type="hidden" name="per_serving" value="{{ result.per_serving }}">
-  <button type="submit">Use {{ result.per_serving }} kcal as this recipe's calories per serving</button>
+<form method="post" action="/recipes/{{ recipe.id }}/apply_calories" class="inline-form">
+  <label>Calories per serving to save
+    <input type="number" name="per_serving" value="{{ result.per_serving }}" step="1" min="0">
+  </label>
+  <button type="submit">Save</button>
 </form>
-<p class="hint">This replaces the recipe's current value of {{ "%.0f"|format(recipe.calories_per_serving) }} kcal.</p>
+<p class="hint">Adjust the number above if Spoonacular's estimate looks off (e.g. an ingredient it couldn't match, or a quantity it misread) — this replaces the recipe's current value of {{ "%.0f"|format(recipe.calories_per_serving) }} kcal.</p>
 {% endblock %}
