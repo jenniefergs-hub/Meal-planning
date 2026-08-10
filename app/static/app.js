@@ -102,10 +102,19 @@ document.addEventListener("DOMContentLoaded", () => {
           card.querySelectorAll("p")[0].textContent = `${r.used_count} on hand, ${r.missed_count} missing`;
           card.querySelectorAll("p")[1].textContent = caloriesText;
           if (r.missing.length) {
-            const missingP = document.createElement("p");
-            missingP.className = "missing";
-            missingP.textContent = `Missing: ${r.missing.join(", ")}`;
-            card.appendChild(missingP);
+            const missingLabel = document.createElement("p");
+            missingLabel.className = "missing-label";
+            missingLabel.textContent = "Missing:";
+            card.appendChild(missingLabel);
+
+            const missingList = document.createElement("ul");
+            missingList.className = "missing-list";
+            for (const name of r.missing) {
+              const li = document.createElement("li");
+              li.textContent = name;
+              missingList.appendChild(li);
+            }
+            card.appendChild(missingList);
           }
           resultsEl.appendChild(card);
         }
