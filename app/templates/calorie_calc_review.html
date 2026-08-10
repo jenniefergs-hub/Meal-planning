@@ -6,10 +6,12 @@
 <p class="hint">
   Estimated by looking up each ingredient's nutrition on Spoonacular based on its name and quantity, then dividing the total by servings.
   {% if result.unmatched_count %}
-    {{ result.unmatched_count }} ingredient{{ "s" if result.unmatched_count != 1 else "" }} couldn't be matched and counted as 0 calories — check the table below and adjust ingredient wording if needed for a more accurate estimate.
+    {{ result.unmatched_count }} ingredient{{ "s" if result.unmatched_count != 1 else "" }} couldn't be matched and counted as 0 calories — check the table below.
   {% endif %}
+  You can correct any ingredient's calories below if Spoonacular's estimate looks wrong; the total updates as you go.
 </p>
 
+<div id="calorie-calc" data-servings="{{ result.servings }}">
 <table class="table">
   <thead><tr><th>Ingredient</th><th>Matched as</th><th>Calories</th></tr></thead>
   <tbody>
@@ -17,22 +19,26 @@
     <tr>
       <td>{{ row.line }}</td>
       <td>{{ row.matched_name }}</td>
-      <td>{{ row.calories }}</td>
+      <td><input type="number" class="ing-calorie-input" value="{{ row.calories }}" step="1" min="0"></td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 
 <p>
-  <strong>Total: {{ result.total_calories }} kcal</strong> &divide; {{ result.servings }} serving{{ "s" if result.servings != 1 else "" }}
-  = <strong>{{ result.per_serving }} kcal per serving</strong>
+  <strong>Total: <span id="calc-total-calories">{{ result.total_calories }}</span> kcal</strong>
+  &divide; {{ result.servings }} serving{{ "s" if result.servings != 1 else "" }}
+  = <strong><span id="calc-per-serving-display">{{ result.per_serving }}</span> kcal per serving</strong>
 </p>
 
 <form method="post" action="/recipes/{{ recipe.id }}/apply_calories" class="inline-form">
   <label>Calories per serving to save
-    <input type="number" name="per_serving" value="{{ result.per_serving }}" step="1" min="0">
+    <input type="number" id="per-serving-input" name="per_serving" value="{{ result.per_serving }}" step="1" min="0">
   </label>
   <button type="submit">Save</button>
 </form>
-<p class="hint">Adjust the number above if Spoonacular's estimate looks off (e.g. an ingredient it couldn't match, or a quantity it misread) — this replaces the recipe's current value of {{ "%.0f"|format(recipe.calories_per_serving) }} kcal.</p>
+<p class="hint">The field above follows your edits to the ingredients above, but you can also type an exact final number directly — this replaces the recipe's current value of {{ "%.0f"|format(recipe.calories_per_serving) }} kcal.</p>
+</div>
+
+<script src="/static/app.js"></script>
 {% endblock %}

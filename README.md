@@ -87,7 +87,7 @@ Either way, you land on a pre-filled version of the "Add a recipe" form before a
 
 ### Calculating calories from ingredients
 
-On a recipe's page, click **"Calculate calories from ingredients"** (needs a Spoonacular key from Section 3). The app looks up nutrition for each ingredient by name and quantity, sums the calories, and divides by the recipe's servings. You'll see a breakdown of what was matched (and a warning if any ingredient couldn't be matched, which counts as 0 calories in the total) before choosing whether to apply the result — it never overwrites the recipe's calorie figure automatically. Handy for recipes imported from a photo, or any recipe where you don't already know the calorie count.
+On a recipe's page, click **"Calculate calories from ingredients"** (needs a Spoonacular key from Section 3). The app looks up nutrition for each ingredient by name and quantity, sums the calories, and divides by the recipe's servings. You'll see a breakdown of what was matched (and a warning if any ingredient couldn't be matched, which counts as 0 calories in the total) — if any ingredient's figure looks wrong, edit it right there and the total and per-serving numbers recalculate live; you can also type a final number directly. Nothing is applied to the recipe until you click Save. Handy for recipes imported from a photo, or any recipe where you don't already know the calorie count.
 
 ### Marking a recipe as cooked
 
