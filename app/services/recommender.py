@@ -40,17 +40,16 @@ def _avg_rating(recipe):
 
 
 def _score_recipe(recipe, pantry_names_lower):
-    ingredient_names = [
-        ri.name.lower() for ri in recipe.ingredients if not is_pantry_staple(ri.name)
-    ]
+    candidates = [ri for ri in recipe.ingredients if not is_pantry_staple(ri.name)]
     matched, missing = [], []
-    for name in ingredient_names:
-        if any(_ingredients_overlap(name, p) for p in pantry_names_lower):
-            matched.append(name)
+    for ri in candidates:
+        name_lower = ri.name.lower()
+        if any(_ingredients_overlap(name_lower, p) for p in pantry_names_lower):
+            matched.append(ri)
         else:
-            missing.append(name)
+            missing.append(ri)
 
-    total = len(ingredient_names) or 1
+    total = len(candidates) or 1
     match_pct = round(len(matched) / total * 100)
 
     avg_rating = _avg_rating(recipe)
@@ -60,9 +59,9 @@ def _score_recipe(recipe, pantry_names_lower):
     return {
         "recipe": recipe,
         "matched_count": len(matched),
-        "total_count": len(ingredient_names),
+        "total_count": len(candidates),
         "match_pct": match_pct,
-        "missing": missing,
+        "missing": missing,  # RecipeIngredient objects -- keeps quantity/unit for display
         "avg_rating": avg_rating,
         "rating_count": len(recipe.ratings),
         "combined_score": combined_score,

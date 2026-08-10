@@ -61,7 +61,9 @@ def online_recommendations(db: Session = Depends(get_db)):
         out = []
         for r in results:
             missing = [
-                m["name"] for m in r.get("missedIngredients", []) if not is_pantry_staple(m["name"])
+                (m.get("original") or m["name"]).strip()
+                for m in r.get("missedIngredients", [])
+                if not is_pantry_staple(m["name"])
             ]
             out.append(
                 {
