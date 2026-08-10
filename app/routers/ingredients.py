@@ -17,9 +17,22 @@ def pantry_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(request, "pantry.html", {"items": items})
 
 
+def _parse_expiry(expiry_date: str):
+    if not expiry_date:
+        return None
+    try:
+        return datetime.strptime(expiry_date, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def _resolve_unit(unit: str, unit_other: str) -> str:
+    return unit_other.strip() if unit == "other" else unit.strip()
+
+
 @router.post("/pantry/add")
 def add_ingredient(
-    name: str = Form(...),
+    name: str = Form(""),
     quantity: str = Form(""),
     unit: str = Form(""),
     unit_other: str = Form(""),
@@ -27,22 +40,16 @@ def add_ingredient(
     expiry_date: str = Form(""),
     db: Session = Depends(get_db),
 ):
-    expiry = None
-    if expiry_date:
-        try:
-            expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
-        except ValueError:
-            expiry = None
-
-    resolved_unit = unit_other.strip() if unit == "other" else unit.strip()
+    if not name.strip():
+        return RedirectResponse("/pantry", status_code=303)
 
     item = models.Ingredient(
         name=name.strip(),
         quantity=quantity.strip() or None,
-        unit=resolved_unit or None,
+        unit=_resolve_unit(unit, unit_other) or None,
         category=category.strip() or None,
         source="manual",
-        expiry_date=expiry,
+        expiry_date=_parse_expiry(expiry_date),
     )
     db.add(item)
     db.commit()
@@ -55,4 +62,43 @@ def delete_ingredient(item_id: int, db: Session = Depends(get_db)):
     if item:
         db.delete(item)
         db.commit()
+    return RedirectResponse("/pantry", status_code=303)
+
+
+@router.get("/pantry/{item_id}/edit")
+def edit_ingredient_page(item_id: int, request: Request, db: Session = Depends(get_db)):
+    item = db.get(models.Ingredient, item_id)
+    if not item:
+        return RedirectResponse("/pantry", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "pantry_edit.html",
+        {"item": item, "error": request.query_params.get("error")},
+    )
+
+
+@router.post("/pantry/{item_id}/edit")
+def edit_ingredient_submit(
+    item_id: int,
+    name: str = Form(""),
+    quantity: str = Form(""),
+    unit: str = Form(""),
+    unit_other: str = Form(""),
+    category: str = Form(""),
+    expiry_date: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    item = db.get(models.Ingredient, item_id)
+    if not item:
+        return RedirectResponse("/pantry", status_code=303)
+    if not name.strip():
+        return RedirectResponse(f"/pantry/{item_id}/edit?error=missing_name", status_code=303)
+
+    item.name = name.strip()
+    item.quantity = quantity.strip() or None
+    item.unit = _resolve_unit(unit, unit_other) or None
+    item.category = category.strip() or None
+    item.expiry_date = _parse_expiry(expiry_date)
+
+    db.commit()
     return RedirectResponse("/pantry", status_code=303)

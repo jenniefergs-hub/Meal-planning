@@ -318,7 +318,7 @@ def calculate_calories(recipe_id: int, request: Request, db: Session = Depends(g
 
 
 @router.post("/recipes/{recipe_id}/apply_calories")
-def apply_calculated_calories(recipe_id: int, per_serving: str = Form(...), db: Session = Depends(get_db)):
+def apply_calculated_calories(recipe_id: int, per_serving: str = Form(""), db: Session = Depends(get_db)):
     recipe = db.get(models.Recipe, recipe_id)
     if not recipe:
         return RedirectResponse("/recipes", status_code=303)

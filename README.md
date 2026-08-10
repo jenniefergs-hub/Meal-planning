@@ -71,7 +71,7 @@ Click **Sync receipts now** to fetch and parse matching emails. Parsed line item
 
 ## 6. Using the app
 
-- **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts.
+- **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts. Click **Edit** on any row to fix a name, quantity, unit, category, or expiry date later.
 - **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required), manually add an online recipe you like (paste the URL), or import from a URL or photo (see below). Click **"Edit recipe"** on any recipe's page to fix or update it later — handy for cleaning up an import that didn't come through perfectly. On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
 - **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each. Any oil, salt, and seasoning pepper (not bell/chili peppers) are ignored when scoring matches and listing what's missing, since those are assumed to always be on hand.
 - **Settings**: household member names, Spoonacular API key, OCR API key, and Gmail credentials.

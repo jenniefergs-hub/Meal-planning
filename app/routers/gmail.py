@@ -65,8 +65,9 @@ def gmail_oauth2callback(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/gmail/query")
-def update_query(query: str = Form(...), db: Session = Depends(get_db)):
-    settings_service.set_setting(db, "gmail_query", query)
+def update_query(query: str = Form(""), db: Session = Depends(get_db)):
+    if query.strip():
+        settings_service.set_setting(db, "gmail_query", query)
     return RedirectResponse("/gmail", status_code=303)
 
 

@@ -27,7 +27,8 @@
       <td><span class="badge badge-{{ item.source }}">{{ item.source }}</span></td>
       <td>{{ item.expiry_date.strftime("%Y-%m-%d") if item.expiry_date else "" }}</td>
       <td>
-        <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove this ingredient?');">
+        <a href="/pantry/{{ item.id }}/edit">Edit</a>
+        <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove this ingredient?');" style="display:inline;">
           <button type="submit" class="danger">Remove</button>
         </form>
       </td>

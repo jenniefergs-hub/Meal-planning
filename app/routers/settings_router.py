@@ -49,7 +49,7 @@ def save_gcv_key(api_key: str = Form(""), db: Session = Depends(get_db)):
 
 
 @router.post("/settings/gmail_client_secret")
-def save_client_secret(client_secret_json: str = Form(...), db: Session = Depends(get_db)):
+def save_client_secret(client_secret_json: str = Form(""), db: Session = Depends(get_db)):
     try:
         gmail_service.save_client_secret(db, client_secret_json)
     except Exception:
