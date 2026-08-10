@@ -1,6 +1,32 @@
+import re
+
 MATCH_WEIGHT = 0.65
 RATING_WEIGHT = 0.35
 NEUTRAL_RATING_SCORE = 50  # used for unrated recipes so they aren't buried or favored
+
+_OIL_RE = re.compile(r"\boil\b", re.I)
+_SALT_RE = re.compile(r"\bsalt\b", re.I)
+_PEPPER_RE = re.compile(r"\bpepper\b", re.I)
+# "pepper" alone (or "black/white/ground/cracked pepper") means the seasoning;
+# these qualifiers mean it's actually a vegetable/chili and should still count.
+_PEPPER_VEGETABLE_HINTS = re.compile(
+    r"\b(bell|red|green|yellow|orange|chil?li|jalape[nñ]o|banana|poblano|serrano|"
+    r"habanero|scotch bonnet|cayenne|sweet)\b",
+    re.I,
+)
+
+
+def is_pantry_staple(name: str) -> bool:
+    """Ingredients assumed to always be on hand: any oil, salt, and seasoning
+    pepper -- but not bell/chili/other vegetable peppers. Recommendations
+    ignore these so a recipe isn't marked down just for needing salt."""
+    if _OIL_RE.search(name):
+        return True
+    if _SALT_RE.search(name):
+        return True
+    if _PEPPER_RE.search(name) and not _PEPPER_VEGETABLE_HINTS.search(name):
+        return True
+    return False
 
 
 def _ingredients_overlap(name_a_lower, name_b_lower):
@@ -14,7 +40,9 @@ def _avg_rating(recipe):
 
 
 def _score_recipe(recipe, pantry_names_lower):
-    ingredient_names = [ri.name.lower() for ri in recipe.ingredients]
+    ingredient_names = [
+        ri.name.lower() for ri in recipe.ingredients if not is_pantry_staple(ri.name)
+    ]
     matched, missing = [], []
     for name in ingredient_names:
         if any(_ingredients_overlap(name, p) for p in pantry_names_lower):

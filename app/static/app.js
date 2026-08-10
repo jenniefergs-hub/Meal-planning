@@ -1,3 +1,21 @@
+// Keep in sync with UNIT_OPTIONS in app/templates_config.py
+const UNIT_OPTIONS = [
+  "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "oz", "lb",
+  "pinch", "dash", "clove", "slice", "can", "jar", "bottle",
+  "bag", "box", "packet", "bunch", "piece",
+];
+
+window.toggleUnitOther = (select) => {
+  const otherInput = select.parentElement.querySelector(".unit-other");
+  if (!otherInput) return;
+  if (select.value === "other") {
+    otherInput.style.display = "inline-block";
+  } else {
+    otherInput.style.display = "none";
+    otherInput.value = "";
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const addRowBtn = document.getElementById("add-ing-row");
   if (addRowBtn) {
@@ -5,10 +23,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const container = document.getElementById("ingredient-rows");
       const row = document.createElement("div");
       row.className = "ing-row";
+      const unitOptionsHtml = UNIT_OPTIONS.map((u) => `<option value="${u}">${u}</option>`).join("");
       row.innerHTML = `
         <input type="text" name="ing_name" placeholder="Ingredient name">
         <input type="text" name="ing_qty" placeholder="Qty">
-        <input type="text" name="ing_unit" placeholder="Unit">
+        <select name="ing_unit" class="unit-select" onchange="window.toggleUnitOther(this)">
+          <option value="" selected>unit&hellip;</option>
+          ${unitOptionsHtml}
+          <option value="other">Other&hellip;</option>
+        </select>
+        <input type="text" name="ing_unit_other" class="unit-other" placeholder="Custom unit" style="display: none;">
       `;
       container.appendChild(row);
     });

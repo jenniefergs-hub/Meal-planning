@@ -73,7 +73,7 @@ Click **Sync receipts now** to fetch and parse matching emails. Parsed line item
 
 - **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts.
 - **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required), manually add an online recipe you like (paste the URL), or import from a URL or photo (see below). Click **"Edit recipe"** on any recipe's page to fix or update it later — handy for cleaning up an import that didn't come through perfectly. On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
-- **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each.
+- **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each. Any oil, salt, and seasoning pepper (not bell/chili peppers) are ignored when scoring matches and listing what's missing, since those are assumed to always be on hand.
 - **Settings**: household member names, Spoonacular API key, OCR API key, and Gmail credentials.
 
 ### Importing a recipe from a URL or photo
@@ -96,6 +96,12 @@ On a recipe's page, click **"I made this — update my pantry"**. The app shows 
 ### Ratings
 
 Set up to 4 household member names in **Settings**. Each recipe page lets every member rate it 1–5 stars. Ratings feed into the **Recommendations** ranking (65% ingredient match, 35% average rating), so recipes your household rates highly get suggested more often; unrated recipes are scored neutrally so they aren't buried.
+
+**Top Recipes by Person** (linked from the Recipes page) shows each household member's own top 20 rated recipes, highest to lowest — handy for settling "what does everyone actually like" separately from the blended household ranking.
+
+### Units
+
+When adding or editing an ingredient (in the Pantry or on a recipe), the unit field is a dropdown of common cooking units (g, cup, tbsp, can, etc.) rather than free text, so units stay consistent. Pick **"Other…"** to type a custom unit if what you need isn't listed.
 
 ## 7. Deploying online (no computer needed, e.g. phone-only access)
 

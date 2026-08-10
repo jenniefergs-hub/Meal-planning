@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Top Recipes by Person{% endblock %}
+{% block content %}
+<h1>Top Recipes by Person</h1>
+<p class="hint">Each household member's top-rated recipes (up to 20), highest to lowest. Set member names in <a href="/settings">Settings</a>.</p>
+
+{% for member, ratings in rankings.items() %}
+<h2>{{ member }}</h2>
+{% if ratings %}
+<table class="table">
+  <thead><tr><th>#</th><th>Recipe</th><th>Rating</th><th>Calories</th></tr></thead>
+  <tbody>
+  {% for r in ratings %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><a href="/recipes/{{ r.recipe.id }}">{{ r.recipe.title }}</a></td>
+      <td>★ {{ r.rating }}</td>
+      <td>{{ "%.0f"|format(r.recipe.calories_per_serving) }} kcal</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="hint">{{ member }} hasn't rated any recipes yet.</p>
+{% endif %}
+{% endfor %}
+{% endblock %}

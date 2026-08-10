@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import unit_field %}
 {% block title %}Pantry{% endblock %}
 {% block content %}
 <h1>Pantry</h1>
@@ -6,7 +7,7 @@
 <form method="post" action="/pantry/add" class="inline-form">
   <input type="text" name="name" placeholder="Ingredient name" required>
   <input type="text" name="quantity" placeholder="Qty">
-  <input type="text" name="unit" placeholder="Unit (g, cups...)">
+  {{ unit_field("unit") }}
   <input type="text" name="category" placeholder="Category">
   <input type="date" name="expiry_date">
   <button type="submit">Add</button>

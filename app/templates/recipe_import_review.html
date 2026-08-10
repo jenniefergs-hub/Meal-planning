@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import unit_field %}
 {% block title %}Review imported recipe{% endblock %}
 {% block content %}
 <a href="/recipes/import">&larr; Back to import</a>
@@ -34,13 +35,13 @@
     <div class="ing-row">
       <input type="text" name="ing_name" placeholder="Ingredient name" value="{{ ing.name }}">
       <input type="text" name="ing_qty" placeholder="Qty" value="{{ ing.quantity }}">
-      <input type="text" name="ing_unit" placeholder="Unit" value="{{ ing.unit }}">
+      {{ unit_field("ing_unit", ing.unit) }}
     </div>
   {% else %}
     <div class="ing-row">
       <input type="text" name="ing_name" placeholder="Ingredient name">
       <input type="text" name="ing_qty" placeholder="Qty">
-      <input type="text" name="ing_unit" placeholder="Unit">
+      {{ unit_field("ing_unit") }}
     </div>
   {% endfor %}
   </div>

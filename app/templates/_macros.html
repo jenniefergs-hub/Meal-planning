@@ -1,0 +1,17 @@
+{% macro unit_field(name, current_value="") %}
+<select name="{{ name }}" class="unit-select" onchange="window.toggleUnitOther(this)">
+  <option value="" {% if not current_value %}selected{% endif %}>unit&hellip;</option>
+  {% for u in unit_options %}
+  <option value="{{ u }}" {% if current_value == u %}selected{% endif %}>{{ u }}</option>
+  {% endfor %}
+  <option value="other" {% if current_value and current_value not in unit_options %}selected{% endif %}>Other&hellip;</option>
+</select>
+<input
+  type="text"
+  name="{{ name }}_other"
+  class="unit-other"
+  placeholder="Custom unit"
+  value="{{ current_value if (current_value and current_value not in unit_options) else '' }}"
+  style="display: {{ 'inline-block' if (current_value and current_value not in unit_options) else 'none' }};"
+>
+{% endmacro %}

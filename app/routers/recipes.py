@@ -19,6 +19,22 @@ def recipes_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(request, "recipes.html", {"recipes": recipes})
 
 
+@router.get("/recipes/top-by-person")
+def top_recipes_by_person(request: Request, db: Session = Depends(get_db)):
+    household_members = settings_service.get_household_members(db)
+    rankings = {}
+    for member in household_members:
+        ratings = (
+            db.query(models.RecipeRating)
+            .filter_by(member_name=member)
+            .order_by(models.RecipeRating.rating.desc(), models.RecipeRating.rated_at.desc())
+            .limit(20)
+            .all()
+        )
+        rankings[member] = ratings
+    return templates.TemplateResponse(request, "top_recipes.html", {"rankings": rankings})
+
+
 @router.get("/recipes/import")
 def import_recipe_page(request: Request):
     return templates.TemplateResponse(
@@ -96,8 +112,11 @@ def _parse_recipe_form(form) -> dict:
     names = form.getlist("ing_name")
     qtys = form.getlist("ing_qty")
     units = form.getlist("ing_unit")
-    for n, q, u in zip(names, qtys, units):
+    units_other = form.getlist("ing_unit_other")
+    for i, (n, q, u) in enumerate(zip(names, qtys, units)):
         if n and n.strip():
+            if u == "other":
+                u = units_other[i] if i < len(units_other) else ""
             ingredients.append({"name": n.strip(), "quantity": q or None, "unit": u or None})
 
     return {

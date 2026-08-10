@@ -22,6 +22,7 @@ def add_ingredient(
     name: str = Form(...),
     quantity: str = Form(""),
     unit: str = Form(""),
+    unit_other: str = Form(""),
     category: str = Form(""),
     expiry_date: str = Form(""),
     db: Session = Depends(get_db),
@@ -33,10 +34,12 @@ def add_ingredient(
         except ValueError:
             expiry = None
 
+    resolved_unit = unit_other.strip() if unit == "other" else unit.strip()
+
     item = models.Ingredient(
         name=name.strip(),
         quantity=quantity.strip() or None,
-        unit=unit.strip() or None,
+        unit=resolved_unit or None,
         category=category.strip() or None,
         source="manual",
         expiry_date=expiry,

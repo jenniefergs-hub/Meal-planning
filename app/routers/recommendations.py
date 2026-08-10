@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import get_db
 from ..services import settings_service, spoonacular_service
-from ..services.recommender import recommend_local
+from ..services.recommender import is_pantry_staple, recommend_local
 from ..templates_config import templates
 
 router = APIRouter()
@@ -60,14 +60,17 @@ def online_recommendations(db: Session = Depends(get_db)):
 
         out = []
         for r in results:
+            missing = [
+                m["name"] for m in r.get("missedIngredients", []) if not is_pantry_staple(m["name"])
+            ]
             out.append(
                 {
                     "id": r["id"],
                     "title": r["title"],
                     "image": r.get("image"),
                     "used_count": r.get("usedIngredientCount", 0),
-                    "missed_count": r.get("missedIngredientCount", 0),
-                    "missing": [m["name"] for m in r.get("missedIngredients", [])],
+                    "missed_count": len(missing),
+                    "missing": missing,
                     "calories": nutrition_map.get(r["id"]),
                     "url": f"https://spoonacular.com/recipes/{r['title'].replace(' ', '-')}-{r['id']}",
                 }

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% from "_macros.html" import unit_field %}
 {% block title %}Recipes{% endblock %}
 {% block content %}
 <h1>Recipes</h1>
 
-<p><a href="/recipes/import">Import from a URL or photo</a> instead of typing it in.</p>
+<p><a href="/recipes/import">Import from a URL or photo</a> instead of typing it in. Or see <a href="/recipes/top-by-person">Top Recipes by Person</a>.</p>
 
 <details class="add-recipe">
 <summary>+ Add a recipe</summary>
@@ -27,7 +28,7 @@
     <div class="ing-row">
       <input type="text" name="ing_name" placeholder="Ingredient name">
       <input type="text" name="ing_qty" placeholder="Qty">
-      <input type="text" name="ing_unit" placeholder="Unit">
+      {{ unit_field("ing_unit") }}
     </div>
   </div>
   <button type="button" id="add-ing-row">+ Add ingredient</button>
