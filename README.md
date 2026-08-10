@@ -53,7 +53,7 @@ Without either key, importing from a **URL** still works (it doesn't need this) 
 
 ## 5. Connect Gmail (to auto-import grocery receipts)
 
-Live Gmail access requires you to register your own OAuth client with Google — there's no way around this, Google requires every app to have its own credentials.
+Live Gmail access requires you to register your own OAuth client with Google — there's no way around this, Google requires every app to have its own credentials. (Skip this section entirely if you'd rather just upload receipt PDFs — see Section 6 — which needs no Google setup at all.)
 
 1. Go to https://console.cloud.google.com/ and create (or pick) a project.
 2. **APIs & Services → Library**: enable the **Gmail API**.
@@ -63,27 +63,37 @@ Live Gmail access requires you to register your own OAuth client with Google —
    - Authorized redirect URI: `http://localhost:8000/gmail/oauth2callback`
 5. Download the client JSON (the "Download JSON" button after creating it).
 6. In the app, go to **Settings**, paste the full JSON into the "Gmail connection" box, and Save.
-7. Go to **Email Import** and click **Connect Gmail** — you'll see Google's consent screen (it may warn "Google hasn't verified this app" since it's your own private client; click **Advanced → Go to [app name] (unsafe)** to proceed — this is expected for personal-use OAuth apps).
+7. Go to **Import Receipts** and click **Connect Gmail** — you'll see Google's consent screen (it may warn "Google hasn't verified this app" since it's your own private client; click **Advanced → Go to [app name] (unsafe)** to proceed — this is expected for personal-use OAuth apps).
 
-The app only requests **read-only** Gmail access (`gmail.readonly`) and only fetches messages matching the search query you configure on the Email Import page (default: emails that look like order confirmations/receipts from the last 180 days). Narrow the query to your actual grocery retailer's sending address for best results, e.g. `from:instacart.com` or `from:orders@amazon.com`.
+The app only requests **read-only** Gmail access (`gmail.readonly`) and only fetches messages matching the search query you configure on the Import Receipts page (default: emails that look like order confirmations/receipts from the last 180 days). Narrow the query to your actual grocery retailer's sending address for best results, e.g. `from:instacart.com` or `from:orders@amazon.com`.
 
 Click **Sync receipts now** to fetch and parse matching emails. Parsed line items land in a **Pending review** queue — receipt formats vary too much across retailers to trust automatic parsing blindly, so nothing is added to your pantry until you click **Approve** on each item (or **Reject** to discard it).
 
 ## 6. Using the app
 
-- **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts. Click **Edit** on any row to fix a name, quantity, unit, category, or expiry date later.
-- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required), manually add an online recipe you like (paste the URL), or import from a URL or photo (see below). Click **"Edit recipe"** on any recipe's page to fix or update it later — handy for cleaning up an import that didn't come through perfectly. On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
+- **Pantry**: your current ingredients — add manually, approve items pulled from Gmail receipts, or from an uploaded receipt PDF (see below). Click **Edit** on any row to fix a name, quantity, unit, category, or expiry date later.
+- **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required), manually add an online recipe you like (paste the URL), or import from a URL, photo, or PDF (see below). Click **"Edit recipe"** on any recipe's page to fix or update it later — handy for cleaning up an import that didn't come through perfectly. On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
 - **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each. Any oil, salt, and seasoning pepper (not bell/chili peppers) are ignored when scoring matches and listing what's missing, since those are assumed to always be on hand.
+- **Import Receipts**: pull grocery items into your Pantry's review queue, either from an uploaded PDF or from Gmail.
 - **Settings**: household member names, Spoonacular API key, OCR API key, and Gmail credentials.
 
-### Importing a recipe from a URL or photo
+### Importing a recipe from a URL, photo, or PDF
 
 On the **Recipes** page, click **"Import from a URL or photo"**.
 
 - **From a URL**: paste a link to any recipe page. The app first tries the structured recipe data most modern recipe sites embed (schema.org markup) to reliably pull the title, ingredients, instructions, servings, and prep time — plus calories, if the site happens to publish them (many don't). If a page doesn't have that structured data, it automatically falls back to a rough guess based on the page's visible text (title from the page heading, ingredient lines identified by starting with a quantity, everything else treated as instructions) — much less reliable, and clearly flagged as such on the review page, but means most pages return *something* to start from rather than nothing.
-- **From a photo**: upload a photo of a cookbook page (needs the OCR.space key from Section 4). The app reads the text and makes a rough guess at splitting it into a title, ingredient lines, and instructions, based on which lines start with a quantity. This is much less reliable than the URL import — cookbook layouts vary a lot — so review it carefully.
+- **From a photo**: upload a photo of a cookbook page (needs an OCR key from Section 4). The app reads the text and makes a rough guess at splitting it into a title, ingredient lines, and instructions, based on which lines start with a quantity. This is much less reliable than the URL import — cookbook layouts vary a lot — so review it carefully.
+- **From a PDF**: upload a PDF of a recipe. Text-based PDFs (e.g. exported from a recipe site or app) are read directly; a scanned/photographed recipe saved as a PDF needs an OCR key (Section 4) to fall back to, same as photo import. Split into title/ingredients/instructions using the same rough guess as photo import.
 
-Either way, you land on a pre-filled version of the "Add a recipe" form before anything is saved — nothing is added to your recipe book until you review and click **Save recipe**. Calories are almost never available from either source, so that field is usually left for you to fill in.
+Either way, you land on a pre-filled version of the "Add a recipe" form before anything is saved — nothing is added to your recipe book until you review and click **Save recipe**. Calories are almost never available from any of these sources, so that field is usually left for you to fill in.
+
+### Importing grocery receipts from a PDF
+
+On the **Import Receipts** page, under "From a PDF", upload a receipt saved as a PDF — no Gmail connection needed. Text-based receipt PDFs (most order-confirmation PDFs from online grocery shops) are read directly; a scanned receipt needs an OCR key from Section 4. Parsed items land in the same **Pending review** queue as Gmail-synced receipts, so nothing reaches your pantry until you approve each item.
+
+### Adding a photo to a recipe
+
+On a recipe's page, click **"Add a photo"** to attach an image (a photo of the finished dish, or of the cookbook page). It's resized and compressed automatically, and shows as a thumbnail on the Recipes and Recommendations pages. Click **"Remove image"** to take it off.
 
 ### Calculating calories from ingredients
 
@@ -145,7 +155,7 @@ If you skip this step, the app still works fine on Render — your data just res
 - **Gmail**: `localhost` no longer applies, so add a second redirect URI:
   1. In Google Cloud Console → your OAuth client → add authorized redirect URI: `https://<your-render-url>/gmail/oauth2callback`
   2. On the deployed app's Settings page, paste the same client JSON and Save.
-  3. Go to Email Import → Connect Gmail as before.
+  3. Go to Import Receipts → Connect Gmail as before.
 
 ### Free-tier caveats
 
@@ -156,7 +166,8 @@ If you skip this step, the app still works fine on Render — your data just res
 
 - **Receipt parsing is heuristic.** Grocery receipt emails have no standard format, so the parser looks for common patterns (quantity/name/price lines, HTML table rows) and flags blacklist words (tax, tip, delivery, total, etc.). It won't be perfect — that's why parsed items always go through the review queue before becoming pantry ingredients.
 - **Calories for book recipes are entered by you** when you add the recipe, since there's no way to automatically look up calories for a recipe from a physical cookbook. Calories for online (Spoonacular) recommendations are fetched automatically.
-- **URL and photo recipe import are also best-effort.** URL import relies on the page publishing structured recipe data (most modern recipe blogs do; older or unusual sites may not). Photo import depends on OCR quality and a simple "does this line start with a number" heuristic to separate ingredients from instructions, which won't handle every cookbook layout well. Both land in an editable review form before saving, specifically because neither is reliable enough to trust unattended.
+- **URL, photo, and PDF recipe import are also best-effort.** URL import relies on the page publishing structured recipe data (most modern recipe blogs do; older or unusual sites may not). Photo and PDF import depend on OCR quality and a simple "does this line start with a number" heuristic to separate ingredients from instructions, which won't handle every layout well. All three land in an editable review form before saving, specifically because none of them is reliable enough to trust unattended.
+- **Recipe photos are stored in the database** (resized and compressed to JPEG on upload, capped at 1200px), not as local files — same reasoning as the Gmail credentials: local files don't survive a Render redeploy without a `DATABASE_URL`, but database rows do.
 - **"Cooked" pantry updates are all-or-nothing per item** — the app removes matched pantry ingredients entirely rather than subtracting partial quantities, since quantities are stored as free text (e.g. "2 lb", "a bunch") that can't be reliably subtracted.
 - This is a single-user app — ratings are attributed by household member name, not authenticated accounts, and there's only one shared password for the whole app (see the deployment section if running it publicly), not per-person logins.
 - `data/` (your local SQLite file, if not using `DATABASE_URL`) is gitignored and never committed. Your Gmail client secret and access token are stored as rows in the app's own database (not local files), so they persist correctly on hosts with an ephemeral filesystem, like Render's free tier.

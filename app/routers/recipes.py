@@ -1,12 +1,12 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
-from ..services import recipe_import, settings_service, spoonacular_service
+from ..services import image_utils, recipe_import, settings_service, spoonacular_service
 from ..services.recommender import match_recipe_to_pantry
 from ..templates_config import templates
 
@@ -85,6 +85,36 @@ async def import_recipe_from_photo(request: Request, db: Session = Depends(get_d
     parsed.setdefault("url", None)
     return templates.TemplateResponse(
         request, "recipe_import_review.html", {"parsed": parsed, "source": "photo"}
+    )
+
+
+@router.post("/recipes/import/pdf")
+async def import_recipe_from_pdf(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    upload = form.get("pdf")
+    if not upload or not getattr(upload, "filename", None):
+        return RedirectResponse("/recipes/import?error=missing_pdf", status_code=303)
+
+    pdf_bytes = await upload.read()
+    gcv_key = settings_service.get_setting(db, "gcv_api_key")
+    ocr_space_key = settings_service.get_setting(db, "ocr_api_key")
+
+    try:
+        text = recipe_import.extract_pdf_text(pdf_bytes, gcv_key, ocr_space_key)
+    except Exception:
+        return RedirectResponse("/recipes/import?error=pdf_failed", status_code=303)
+
+    if not text.strip():
+        error = "pdf_scanned_no_ocr" if not (gcv_key or ocr_space_key) else "pdf_failed"
+        return RedirectResponse(f"/recipes/import?error={error}", status_code=303)
+
+    parsed = recipe_import.parse_ocr_text(text)
+    parsed.setdefault("servings", 1)
+    parsed.setdefault("prep_time_minutes", None)
+    parsed.setdefault("calories_per_serving", None)
+    parsed.setdefault("url", None)
+    return templates.TemplateResponse(
+        request, "recipe_import_review.html", {"parsed": parsed, "source": "pdf"}
     )
 
 
@@ -208,6 +238,47 @@ def recipe_detail(recipe_id: int, request: Request, db: Session = Depends(get_db
             "email_body": _build_recipe_email_body(recipe),
         },
     )
+
+
+@router.post("/recipes/{recipe_id}/image")
+async def upload_recipe_image(recipe_id: int, request: Request, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+
+    form = await request.form()
+    upload = form.get("image")
+    if not upload or not getattr(upload, "filename", None):
+        return RedirectResponse(f"/recipes/{recipe_id}?error=missing_image", status_code=303)
+
+    image_bytes = await upload.read()
+    try:
+        processed, content_type = image_utils.process_recipe_image(image_bytes)
+    except Exception:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=bad_image", status_code=303)
+
+    recipe.image_data = processed
+    recipe.image_content_type = content_type
+    db.commit()
+    return RedirectResponse(f"/recipes/{recipe_id}", status_code=303)
+
+
+@router.get("/recipes/{recipe_id}/image")
+def get_recipe_image(recipe_id: int, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe or not recipe.image_data:
+        return Response(status_code=404)
+    return Response(content=recipe.image_data, media_type=recipe.image_content_type or "image/jpeg")
+
+
+@router.post("/recipes/{recipe_id}/image/delete")
+def delete_recipe_image(recipe_id: int, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if recipe:
+        recipe.image_data = None
+        recipe.image_content_type = None
+        db.commit()
+    return RedirectResponse(f"/recipes/{recipe_id}", status_code=303)
 
 
 @router.post("/recipes/{recipe_id}/delete")

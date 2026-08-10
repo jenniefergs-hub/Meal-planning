@@ -14,6 +14,12 @@
   <p class="error">Choose a photo first.</p>
 {% elif error == "missing_ocr_key" %}
   <p class="error">Add a Google Cloud Vision or OCR.space API key in <a href="/settings">Settings</a> first.</p>
+{% elif error == "missing_pdf" %}
+  <p class="error">Choose a PDF file first.</p>
+{% elif error == "pdf_failed" %}
+  <p class="error">Couldn't read that PDF. It may be corrupted, password-protected, or a scanned image your configured OCR provider couldn't process — try again or add the recipe manually.</p>
+{% elif error == "pdf_scanned_no_ocr" %}
+  <p class="error">That PDF looks like a scanned image with no selectable text, and no OCR provider is set up. Add a Google Cloud Vision or OCR.space key in <a href="/settings">Settings</a>, or add the recipe manually.</p>
 {% endif %}
 
 <h2>From a URL</h2>
@@ -22,6 +28,13 @@
   <button type="submit">Import</button>
 </form>
 <p class="hint">Works best on recipe blogs and sites that embed structured recipe data (most modern recipe sites do). Not every page is supported — you'll always get a chance to review and fix everything before saving.</p>
+
+<h2>From a PDF</h2>
+<form method="post" action="/recipes/import/pdf" enctype="multipart/form-data" class="inline-form">
+  <input type="file" name="pdf" accept="application/pdf" required>
+  <button type="submit">Import</button>
+</form>
+<p class="hint">Works with text-based PDFs (e.g. exported from a recipe app or website). A scanned/photographed recipe saved as a PDF needs a Google Cloud Vision or OCR.space key in Settings to be readable. Ingredients and instructions are split by the same rough guess as photo import, so review carefully.</p>
 
 <h2>From a photo</h2>
 <form method="post" action="/recipes/import/photo" enctype="multipart/form-data" class="inline-form">

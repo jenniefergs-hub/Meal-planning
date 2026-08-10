@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Email Import{% endblock %}
+{% block title %}Import Receipts{% endblock %}
 {% block content %}
-<h1>Email Import</h1>
+<h1>Import Receipts</h1>
 
 {% if error == "connect_failed" %}
   <p class="error">Couldn't connect to Gmail. Double-check the client JSON pasted into Settings is complete and try again.</p>
@@ -11,11 +11,27 @@
   <p class="error">Couldn't sync with Gmail. Try reconnecting from this page, or check back shortly.</p>
 {% elif error == "not_connected" %}
   <p class="error">Gmail isn't connected yet.</p>
+{% elif error == "missing_pdf" %}
+  <p class="error">Choose a PDF file first.</p>
+{% elif error == "pdf_failed" %}
+  <p class="error">Couldn't read that PDF. It may be corrupted, password-protected, or a scanned image your configured OCR provider couldn't process — try again or add a receipt manually.</p>
+{% elif error == "pdf_scanned_no_ocr" %}
+  <p class="error">That PDF looks like a scanned image with no selectable text, and no OCR provider is set up. Add a Google Cloud Vision or OCR.space key in <a href="/settings">Settings</a>, or add the receipt items manually.</p>
+{% elif error == "pdf_no_items" %}
+  <p class="error">Couldn't find any grocery line items in that PDF. It may not be a shopping receipt, or the layout wasn't recognized.</p>
 {% elif error %}
   <p class="error">Something went wrong: {{ error }}</p>
 {% endif %}
-{% if synced is not none %}<p class="success">Sync complete &mdash; {{ synced }} new item(s) found for review.</p>{% endif %}
+{% if synced is not none %}<p class="success">{{ synced }} new item(s) found for review.</p>{% endif %}
 
+<h2>From a PDF</h2>
+<form method="post" action="/gmail/upload_receipt" enctype="multipart/form-data" class="inline-form">
+  <input type="file" name="receipt_pdf" accept="application/pdf" required>
+  <button type="submit">Upload receipt PDF</button>
+</form>
+<p class="hint">Works with most order-confirmation PDFs from online grocery shops. Scanned/photographed receipts saved as PDF need a Google Cloud Vision or OCR.space key set up in Settings to be readable.</p>
+
+<h2>From Gmail</h2>
 {% if not has_client_secret %}
   <p>Set up Gmail access first in <a href="/settings">Settings</a>.</p>
 {% elif not connected %}
@@ -38,7 +54,7 @@
 <h2>Pending items to review</h2>
 <p class="hint">Receipt parsing is best-effort. Approve items to add them to your pantry, or reject anything that isn't a food ingredient.</p>
 <table class="table">
-  <thead><tr><th>Item</th><th>Qty</th><th>Email</th><th>Raw line</th><th></th></tr></thead>
+  <thead><tr><th>Item</th><th>Qty</th><th>Source</th><th>Raw line</th><th></th></tr></thead>
   <tbody>
   {% for p in pending %}
     <tr>

@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
-from ..services import gmail_service, receipt_parser, settings_service
+from ..services import gmail_service, receipt_parser, recipe_import, settings_service
 from ..templates_config import templates
 
 router = APIRouter()
@@ -113,16 +114,57 @@ def gmail_sync(db: Session = Depends(get_db)):
     return RedirectResponse(f"/gmail?synced={new_items}", status_code=303)
 
 
+@router.post("/gmail/upload_receipt")
+async def upload_receipt_pdf(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    upload = form.get("receipt_pdf")
+    if not upload or not getattr(upload, "filename", None):
+        return RedirectResponse("/gmail?error=missing_pdf", status_code=303)
+
+    pdf_bytes = await upload.read()
+    gcv_key = settings_service.get_setting(db, "gcv_api_key")
+    ocr_space_key = settings_service.get_setting(db, "ocr_api_key")
+
+    try:
+        text = recipe_import.extract_pdf_text(pdf_bytes, gcv_key, ocr_space_key)
+    except Exception:
+        return RedirectResponse("/gmail?error=pdf_failed", status_code=303)
+
+    if not text.strip():
+        error = "pdf_scanned_no_ocr" if not (gcv_key or ocr_space_key) else "pdf_failed"
+        return RedirectResponse(f"/gmail?error={error}", status_code=303)
+
+    items = receipt_parser.parse_receipt(None, text)
+    if not items:
+        return RedirectResponse("/gmail?error=pdf_no_items", status_code=303)
+
+    message_id = f"pdf:{uuid4().hex}"
+    for it in items:
+        db.add(
+            models.PendingReceiptItem(
+                message_id=message_id,
+                email_subject=f"PDF: {upload.filename}",
+                raw_line=it["raw_line"],
+                parsed_name=it["name"],
+                parsed_quantity=it.get("quantity"),
+                parsed_unit=it.get("unit"),
+            )
+        )
+    db.commit()
+    return RedirectResponse(f"/gmail?synced={len(items)}", status_code=303)
+
+
 @router.post("/gmail/pending/{item_id}/approve")
 def approve_pending(item_id: int, db: Session = Depends(get_db)):
     item = db.get(models.PendingReceiptItem, item_id)
     if item and item.status == "pending":
+        source = "pdf" if item.message_id.startswith("pdf:") else "gmail"
         db.add(
             models.Ingredient(
                 name=item.parsed_name,
                 quantity=item.parsed_quantity,
                 unit=item.parsed_unit,
-                source="gmail",
+                source=source,
                 raw_text=item.raw_line,
             )
         )

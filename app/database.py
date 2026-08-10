@@ -55,9 +55,15 @@ def run_light_migrations():
     if "recipes" not in inspector.get_table_names():
         return
     existing_cols = {c["name"] for c in inspector.get_columns("recipes")}
-    timestamp_type = "TIMESTAMP" if engine.dialect.name == "postgresql" else "DATETIME"
+    is_postgres = engine.dialect.name == "postgresql"
+    timestamp_type = "TIMESTAMP" if is_postgres else "DATETIME"
+    binary_type = "BYTEA" if is_postgres else "BLOB"
     with engine.begin() as conn:
         if "times_cooked" not in existing_cols:
             conn.execute(text("ALTER TABLE recipes ADD COLUMN times_cooked INTEGER DEFAULT 0"))
         if "last_cooked_at" not in existing_cols:
             conn.execute(text(f"ALTER TABLE recipes ADD COLUMN last_cooked_at {timestamp_type}"))
+        if "image_data" not in existing_cols:
+            conn.execute(text(f"ALTER TABLE recipes ADD COLUMN image_data {binary_type}"))
+        if "image_content_type" not in existing_cols:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN image_content_type VARCHAR"))

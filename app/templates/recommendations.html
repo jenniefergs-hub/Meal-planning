@@ -9,6 +9,7 @@
 <div class="recipe-grid">
 {% for s in scored %}
   <a class="recipe-card" href="/recipes/{{ s.recipe.id }}">
+    {% if s.recipe.image_data %}<img src="/recipes/{{ s.recipe.id }}/image" alt="" class="recipe-thumb">{% endif %}
     <h3>{{ s.recipe.title }}</h3>
     <p>{{ s.match_pct }}% of ingredients on hand ({{ s.matched_count }}/{{ s.total_count }})</p>
     <p class="calories">{{ "%.0f"|format(s.recipe.calories_per_serving) }} kcal / serving</p>

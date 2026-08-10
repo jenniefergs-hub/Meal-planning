@@ -9,6 +9,8 @@
     Imported from the URL below using the page's structured recipe data. Check everything, especially calories — most recipe pages don't include reliable nutrition data.
   {% elif source == "url" %}
     This page didn't have structured recipe data the app could read directly, so this is a rough guess based on the page's visible text — much less reliable than a normal import. Check every field carefully, especially ingredients and instructions, which may include stray page content.
+  {% elif source == "pdf" %}
+    Imported from your PDF. This is a rough guess at splitting the extracted text into ingredients and instructions — check every field carefully before saving.
   {% else %}
     Imported from your photo via OCR. This is best-effort text recognition split into a rough guess at ingredients and instructions — check every field carefully before saving.
   {% endif %}

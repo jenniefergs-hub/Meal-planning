@@ -12,6 +12,24 @@
   {% if recipe.book_name %}From book: <strong>{{ recipe.book_name }}</strong>{% endif %}
   {% if recipe.url %} &middot; <a href="{{ recipe.url }}" target="_blank" rel="noopener">Original recipe link</a>{% endif %}
 </p>
+
+{% if recipe.image_data %}
+<img src="/recipes/{{ recipe.id }}/image" alt="{{ recipe.title }}" style="max-width: 100%; border-radius: 10px; margin: 0.5rem 0; display: block;">
+<form method="post" action="/recipes/{{ recipe.id }}/image/delete" onsubmit="return confirm('Remove this image?');">
+  <button type="submit" class="danger">Remove image</button>
+</form>
+{% else %}
+<form method="post" action="/recipes/{{ recipe.id }}/image" enctype="multipart/form-data" class="inline-form">
+  <input type="file" name="image" accept="image/*" required>
+  <button type="submit">Add a photo</button>
+</form>
+{% endif %}
+{% if error == "missing_image" %}
+  <p class="error">Choose a photo first.</p>
+{% elif error == "bad_image" %}
+  <p class="error">Couldn't process that image — try a different photo.</p>
+{% endif %}
+
 <p>
   <strong>{{ "%.0f"|format(recipe.calories_per_serving) }} kcal</strong> per serving
   &middot; Servings: {{ recipe.servings }}

@@ -1,6 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+    LargeBinary,
+)
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -35,6 +45,8 @@ class Recipe(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     times_cooked = Column(Integer, default=0)
     last_cooked_at = Column(DateTime, nullable=True)
+    image_data = Column(LargeBinary, nullable=True)
+    image_content_type = Column(String, nullable=True)
 
     ingredients = relationship(
         "RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan"

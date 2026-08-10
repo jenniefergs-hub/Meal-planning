@@ -5,6 +5,8 @@ import httpx
 from bs4 import BeautifulSoup
 from recipe_scrapers import scrape_html
 
+from . import pdf_utils
+
 USER_AGENT = "Mozilla/5.0 (compatible; KitchenCompanion/1.0)"
 
 FRACTION_MAP = {
@@ -256,3 +258,27 @@ def parse_ocr_text(text: str) -> dict:
         "ingredients": ingredient_rows,
         "instructions": "\n".join(instruction_lines),
     }
+
+
+def extract_pdf_text(pdf_bytes: bytes, gcv_api_key: str = None, ocr_space_api_key: str = None) -> str:
+    """Text from a PDF: the embedded text layer if there is one (most
+    born-digital receipts/recipes), otherwise OCR each rendered page as a
+    fallback for scanned PDFs, if an OCR key is available.
+
+    Returns whatever text could be found -- may be empty if the PDF is
+    scanned and no OCR key is configured; callers decide how to handle that.
+    """
+    text = pdf_utils.extract_text_from_pdf(pdf_bytes)
+    if pdf_utils.has_usable_text(text):
+        return text
+    if not gcv_api_key and not ocr_space_api_key:
+        return text
+
+    page_images = pdf_utils.render_pdf_pages_to_images(pdf_bytes)
+    page_texts = []
+    for image_bytes in page_images:
+        if gcv_api_key:
+            page_texts.append(ocr_image_gcv(gcv_api_key, image_bytes))
+        else:
+            page_texts.append(ocr_image_ocrspace(ocr_space_api_key, image_bytes, "page.png"))
+    return "\n".join(page_texts).strip()
