@@ -3,30 +3,51 @@ import re
 from bs4 import BeautifulSoup
 
 BLACKLIST = [
-    "subtotal", "total", "tax", "tip", "delivery", "shipping", "fee", "discount",
+    "subtotal", "total", "tax", "tip", "delivery", "shipping", "fee", "charge", "discount",
     "promo", "balance", "order #", "order number", "thank you", "estimated",
     "savings", "credit", "refund", "service fee", "bag fee", "driver", "gratuity",
     "payment", "visa", "mastercard", "card ending", "confirmation", "summary",
-    "unsubscribe", "view order", "track your", "help center",
+    "unsubscribe", "view order", "track your", "help center", "cost of goods",
 ]
 
-PRICE_ONLY_RE = re.compile(r"^\$?\d+\.\d{2}$")
+CURRENCY_SYMBOLS = "£$€"
+CURRENCY_RE = rf"[{CURRENCY_SYMBOLS}]?"
+# Trailing "*" is common on receipts as a VAT/age-restriction footnote marker
+# (e.g. "IPA 4.3% 4 x 330ml* 2/2 £12.00") -- allow it in names so it doesn't
+# break the match, and strip it back off in _clean_name.
+NAME_CHARS = r"A-Za-z0-9'&\-.,()%* "
+
+PRICE_ONLY_RE = re.compile(rf"^{CURRENCY_RE}\d+\.\d{{2}}$")
 QTY_NAME_PRICE_RE = re.compile(
-    r"^\s*(?P<qty>\d+(?:\.\d+)?)\s*[x×]?\s+(?P<name>[A-Za-z][A-Za-z0-9'&\-.,() ]{1,60}?)"
-    r"\s+\$?(?P<price>\d+\.\d{2})\s*$"
+    rf"^\s*(?P<qty>\d+(?:\.\d+)?)\s*[x×]?\s+(?P<name>[A-Za-z][{NAME_CHARS}]{{1,60}}?)"
+    rf"\s+{CURRENCY_RE}(?P<price>\d+\.\d{{2}})\s*$"
+)
+# UK-style order receipts (Ocado and similar) list each item as
+# "Product Name 400g 1/1 £2.50" -- <delivered>/<ordered> in place of a
+# leading quantity, with the delivered count as the meaningful quantity.
+NAME_DELIVERED_PRICE_RE = re.compile(
+    rf"^\s*(?P<name>[A-Za-z][{NAME_CHARS}]{{2,80}}?)"
+    rf"\s+(?P<delivered>\d+)/(?P<ordered>\d+)\s+{CURRENCY_RE}(?P<price>\d+\.\d{{2}})\s*$"
 )
 NAME_PRICE_RE = re.compile(
-    r"^\s*(?P<name>[A-Za-z][A-Za-z0-9'&\-.,() ]{2,60}?)\s+\$?(?P<price>\d+\.\d{2})\s*$"
+    rf"^\s*(?P<name>[A-Za-z][{NAME_CHARS}]{{2,60}}?)\s+{CURRENCY_RE}(?P<price>\d+\.\d{{2}})\s*$"
+)
+
+_BLACKLIST_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(term) for term in BLACKLIST) + r")\b", re.IGNORECASE
 )
 
 
 def _is_blacklisted(text: str) -> bool:
-    low = text.lower()
-    return any(b in low for b in BLACKLIST)
+    return bool(_BLACKLIST_RE.search(text))
 
 
 def _clean_name(name: str) -> str:
-    return re.sub(r"\s+", " ", name).strip(" -.,")
+    return re.sub(r"\s+", " ", name).strip(" -.,*")
+
+
+def _strip_currency(text: str) -> str:
+    return text.strip().lstrip(CURRENCY_SYMBOLS)
 
 
 def parse_text_lines(text: str):
@@ -41,6 +62,16 @@ def parse_text_lines(text: str):
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
                 items.append({"raw_line": line, "name": name, "quantity": m.group("qty"), "unit": None})
+            continue
+
+        m = NAME_DELIVERED_PRICE_RE.match(line)
+        if m:
+            delivered = m.group("delivered")
+            if delivered == "0":
+                continue  # nothing was actually delivered (substituted/unavailable item)
+            name = _clean_name(m.group("name"))
+            if len(name) >= 3 and not _is_blacklisted(name):
+                items.append({"raw_line": line, "name": name, "quantity": delivered, "unit": None})
             continue
 
         m = NAME_PRICE_RE.match(line)
@@ -67,14 +98,14 @@ def parse_html(html: str):
         row_text = " ".join(cells)
         if _is_blacklisted(row_text):
             continue
-        if not any(PRICE_ONLY_RE.match(c.strip().lstrip("$")) for c in cells):
+        if not any(PRICE_ONLY_RE.match(_strip_currency(c)) for c in cells):
             continue  # no price-looking cell -- probably not a line item
 
         name_cell = None
         qty = None
         for c in cells:
             stripped = c.strip()
-            if PRICE_ONLY_RE.match(stripped.lstrip("$")):
+            if PRICE_ONLY_RE.match(_strip_currency(stripped)):
                 continue
             if re.fullmatch(r"\d+", stripped):
                 qty = stripped
