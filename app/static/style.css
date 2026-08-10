@@ -76,9 +76,15 @@ h1 { margin-top: 0; font-size: 1.5rem; }
 .success { color: var(--accent); }
 
 .inline-form { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
-.inline-form input {
+.inline-form input:not([type="file"]) {
   padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;
   background: var(--card-bg); color: var(--text); font-family: inherit;
+}
+/* iOS Safari breaks the native tap-to-open behavior on input[type=file] when
+   background/color are set on it directly -- leave it unstyled aside from
+   text color so "Choose File" stays tappable. */
+.inline-form input[type="file"] {
+  color: var(--text); font-family: inherit;
 }
 
 button {
