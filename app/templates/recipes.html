@@ -4,7 +4,10 @@
 {% block content %}
 <h1>Recipes</h1>
 
-<p><a href="/recipes/import">Import from a URL or photo</a> instead of typing it in. Or see <a href="/recipes/top-by-person">Top Recipes by Person</a>.</p>
+<p>
+  <a class="import-link" href="/recipes/import">Import a recipe from a URL, PDF, or photo &rarr;</a>
+</p>
+<p class="hint"><a href="/recipes/top-by-person">Top Recipes by Person</a></p>
 
 <details class="add-recipe">
 <summary>+ Add a recipe</summary>
@@ -44,7 +47,7 @@
     <h3>{{ r.title }}</h3>
     <p>{% if r.book_name %}{{ r.book_name }}{% elif r.url %}Online recipe{% else %}&nbsp;{% endif %}</p>
     <p class="calories">{{ "%.0f"|format(r.calories_per_serving) }} kcal / serving</p>
-    <p class="rating">
+    <p class="rating{{ '' if r.ratings else ' unrated' }}">
       {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
     </p>
   </a>
