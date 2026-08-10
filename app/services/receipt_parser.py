@@ -37,9 +37,72 @@ _BLACKLIST_RE = re.compile(
     r"\b(?:" + "|".join(re.escape(term) for term in BLACKLIST) + r")\b", re.IGNORECASE
 )
 
+# Some receipt PDFs (Ocado's own PDF export, at least) don't render each line
+# item as one line of text -- the underlying PDF stores each table cell as a
+# separate text object, so pymupdf's extraction comes out as three separate
+# lines per item: the name, then "<delivered>/<ordered>" alone, then the
+# price alone. parse_text_lines() handles single-line receipts; this handles
+# that wrapped-table shape by walking the lines as a small state machine.
+RATIO_LINE_RE = re.compile(r"^(?P<delivered>\d+)/(?P<ordered>\d+)$")
+PRICE_LINE_RE = re.compile(rf"^-?{CURRENCY_RE}\d+\.\d{{2}}$")
+_HEADER_LINE_RE = re.compile(
+    r"^(Use by end of|Products with|Substituted items|Delivered\s*/?\s*$|"
+    r"Ordered$|Price to pay|You've saved|Offers savings)",
+    re.IGNORECASE,
+)
+_SECTION_WORD_RE = re.compile(r"^[A-Za-z]{3,20}$")
+_NOISE_LINE_RE = re.compile(r"^[→\-*•]+$")
+_SAVINGS_BREAKDOWN_RE = re.compile(r"^You've saved .* today$", re.IGNORECASE)
+
 
 def _is_blacklisted(text: str) -> bool:
     return bool(_BLACKLIST_RE.search(text))
+
+
+def _extract_wrapped_table_items(lines):
+    items = []
+    name_buffer = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i].strip()
+        i += 1
+        if not line or _NOISE_LINE_RE.match(line):
+            continue
+        if _SAVINGS_BREAKDOWN_RE.match(line):
+            break  # everything after this repeats already-counted items as a savings summary
+
+        m = RATIO_LINE_RE.match(line)
+        if m:
+            # A bare "N/M" line is only meaningful paired with a name before it
+            # and a price after it (e.g. page-footer numbers like "2/3" look
+            # identical to this shape but aren't item rows) -- anything else
+            # is noise, not the start of a name.
+            if name_buffer:
+                j = i
+                while j < n and not lines[j].strip():
+                    j += 1
+                if j < n and PRICE_LINE_RE.match(lines[j].strip()):
+                    delivered = m.group("delivered")
+                    name = _clean_name(" ".join(name_buffer))
+                    name_buffer = []
+                    if delivered != "0" and len(name) >= 3 and not _is_blacklisted(name):
+                        items.append({
+                            "raw_line": f"{name} {line} {lines[j].strip()}",
+                            "name": name,
+                            "quantity": delivered,
+                            "unit": None,
+                        })
+                    i = j + 1
+                    continue
+            continue
+
+        if _HEADER_LINE_RE.match(line) or _SECTION_WORD_RE.match(line) or _is_blacklisted(line):
+            name_buffer = []
+        else:
+            name_buffer.append(line)
+
+    return items
 
 
 def _clean_name(name: str) -> str:
@@ -52,7 +115,8 @@ def _strip_currency(text: str) -> str:
 
 def parse_text_lines(text: str):
     items = []
-    for raw_line in text.splitlines():
+    lines = text.splitlines()
+    for raw_line in lines:
         line = raw_line.strip()
         if not line or len(line) < 4 or _is_blacklisted(line):
             continue
@@ -80,6 +144,7 @@ def parse_text_lines(text: str):
             if len(name) >= 3 and not _is_blacklisted(name):
                 items.append({"raw_line": line, "name": name, "quantity": None, "unit": None})
 
+    items.extend(_extract_wrapped_table_items(lines))
     return items
 
 
