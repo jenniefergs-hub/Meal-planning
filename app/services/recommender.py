@@ -59,7 +59,7 @@ def _tokenize(name_lower: str) -> set:
     return tokens
 
 
-def _ingredients_overlap(name_a_lower, name_b_lower):
+def ingredients_overlap(name_a_lower, name_b_lower):
     """True if every significant word in name_a appears somewhere in name_b
     (or vice versa) -- catches brand prefixes/suffixes and word-order
     differences a plain substring check misses (e.g. recipe ingredient
@@ -86,7 +86,7 @@ def _score_recipe(recipe, pantry_names_lower):
     matched, missing = [], []
     for ri in candidates:
         name_lower = ri.name.lower()
-        if any(_ingredients_overlap(name_lower, p) for p in pantry_names_lower):
+        if any(ingredients_overlap(name_lower, p) for p in pantry_names_lower):
             matched.append(ri)
         else:
             missing.append(ri)
@@ -138,7 +138,7 @@ def match_recipe_to_pantry(recipe, pantry_ingredients):
         name_lower = ri.name.lower()
         found = False
         for p in pantry_ingredients:
-            if _ingredients_overlap(name_lower, p.name.lower()):
+            if ingredients_overlap(name_lower, p.name.lower()):
                 found = True
                 if p.id not in matched_ids:
                     matched_ids.add(p.id)

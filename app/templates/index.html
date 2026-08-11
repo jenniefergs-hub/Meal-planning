@@ -13,4 +13,37 @@
   receipts. Add your book recipes on the Recipes page (calories required), then head to
   Recommendations to see what you can cook with what you have.
 </p>
+
+{% if expiring %}
+<h2>Use it up soon</h2>
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Use in</th></tr></thead>
+  <tbody>
+  {% for row in expiring %}
+    <tr>
+      <td>{{ row.item.name }}</td>
+      <td>{{ row.item.quantity or "" }} {{ row.item.unit or "" }}</td>
+      <td class="{{ 'error' if row.days_until < 0 else '' }}">
+        {% if row.days_until < 0 %}
+          Expired {{ -row.days_until }} day{{ "" if row.days_until == -1 else "s" }} ago
+        {% elif row.days_until == 0 %}
+          Expires today
+        {% else %}
+          Expires in {{ row.days_until }} day{{ "" if row.days_until == 1 else "s" }}
+        {% endif %}
+      </td>
+      <td>
+        {% if row.recipes %}
+          {% for r in row.recipes %}<a href="/recipes/{{ r.id }}">{{ r.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          <span class="hint">No saved recipe uses this</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
 {% endblock %}

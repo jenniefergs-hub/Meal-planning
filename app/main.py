@@ -12,6 +12,7 @@ from . import models
 from .auth_middleware import BasicAuthMiddleware
 from .database import Base, engine, get_db, run_light_migrations
 from .routers import gmail, ingredients, meal_plan, recipes, recommendations, settings_router
+from .services import expiry
 from .templates_config import templates
 
 Base.metadata.create_all(bind=engine)
@@ -46,6 +47,19 @@ def index(request: Request, db: Session = Depends(get_db)):
     pantry_count = db.query(models.Ingredient).count()
     recipe_count = db.query(models.Recipe).count()
     pending_count = db.query(models.PendingReceiptItem).filter_by(status="pending").count()
+
+    pantry = db.query(models.Ingredient).all()
+    recipe_list = db.query(models.Recipe).all()
+    expiring = expiry.get_expiring_items(pantry)
+    expiring_view = [
+        {
+            "item": item,
+            "days_until": expiry.days_until(item.expiry_date),
+            "recipes": expiry.recipes_using(item, recipe_list),
+        }
+        for item in expiring
+    ]
+
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -53,5 +67,6 @@ def index(request: Request, db: Session = Depends(get_db)):
             "pantry_count": pantry_count,
             "recipe_count": recipe_count,
             "pending_count": pending_count,
+            "expiring": expiring_view,
         },
     )
