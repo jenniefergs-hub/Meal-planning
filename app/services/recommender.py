@@ -7,6 +7,7 @@ NEUTRAL_RATING_SCORE = 50  # used for unrated recipes so they aren't buried or f
 _OIL_RE = re.compile(r"\boil\b", re.I)
 _SALT_RE = re.compile(r"\bsalt\b", re.I)
 _PEPPER_RE = re.compile(r"\bpepper\b", re.I)
+_WATER_RE = re.compile(r"\bwater\b", re.I)
 # "pepper" alone (or "black/white/ground/cracked pepper") means the seasoning;
 # these qualifiers mean it's actually a vegetable/chili and should still count.
 _PEPPER_VEGETABLE_HINTS = re.compile(
@@ -17,12 +18,15 @@ _PEPPER_VEGETABLE_HINTS = re.compile(
 
 
 def is_pantry_staple(name: str) -> bool:
-    """Ingredients assumed to always be on hand: any oil, salt, and seasoning
-    pepper -- but not bell/chili/other vegetable peppers. Recommendations
-    ignore these so a recipe isn't marked down just for needing salt."""
+    """Ingredients assumed to always be on hand: any oil, salt, water, and
+    seasoning pepper -- but not bell/chili/other vegetable peppers.
+    Recommendations ignore these so a recipe isn't marked down just for
+    needing salt or water."""
     if _OIL_RE.search(name):
         return True
     if _SALT_RE.search(name):
+        return True
+    if _WATER_RE.search(name):
         return True
     if _PEPPER_RE.search(name) and not _PEPPER_VEGETABLE_HINTS.search(name):
         return True
