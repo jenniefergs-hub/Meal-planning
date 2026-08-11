@@ -29,7 +29,45 @@ def is_pantry_staple(name: str) -> bool:
     return False
 
 
+# Words that carry no identifying meaning for matching -- brand/marketing
+# filler and pack-size language that would otherwise force a false mismatch
+# just because a pantry item's name has more words than the recipe's.
+_STOPWORDS = {
+    "a", "an", "the", "of", "with", "and", "or", "in", "for", "to",
+    "fresh", "frozen", "organic", "free", "range", "british", "large", "small",
+    "per", "pack", "each", "family", "value",
+}
+
+
+def _tokenize(name_lower: str) -> set:
+    words = re.findall(r"[a-z0-9]+", name_lower)
+    tokens = set()
+    for w in words:
+        if w in _STOPWORDS or len(w) <= 1:
+            continue
+        tokens.add(w)
+        # crude singularization so "tomatoes"/"tomato" or "onions"/"onion"
+        # match regardless of which side is plural
+        if w.endswith("es") and len(w) > 4:
+            tokens.add(w[:-2])
+        elif w.endswith("s") and len(w) > 3:
+            tokens.add(w[:-1])
+    return tokens
+
+
 def _ingredients_overlap(name_a_lower, name_b_lower):
+    """True if every significant word in name_a appears somewhere in name_b
+    (or vice versa) -- catches brand prefixes/suffixes and word-order
+    differences a plain substring check misses (e.g. recipe ingredient
+    "chicken breast" against pantry item "Ocado British Chicken Breast
+    Fillets"). Falls back to substring matching when either name tokenizes
+    to nothing usable, and as an extra check for hyphenated compounds that
+    should stay a single unit rather than separate words.
+    """
+    tokens_a = _tokenize(name_a_lower)
+    tokens_b = _tokenize(name_b_lower)
+    if tokens_a and tokens_b and (tokens_a <= tokens_b or tokens_b <= tokens_a):
+        return True
     return name_a_lower in name_b_lower or name_b_lower in name_a_lower
 
 
