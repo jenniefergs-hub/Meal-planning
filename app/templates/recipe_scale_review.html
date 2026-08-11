@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Scale {{ recipe.title }}{% endblock %}
+{% block content %}
+<a href="/recipes/{{ recipe.id }}" class="btn btn-secondary">&larr; Back to {{ recipe.title }}</a>
+<h1>Scale recipe</h1>
+<p class="hint">
+  Scaling from {{ recipe.servings }} to {{ result.new_servings }} serving{{ "s" if result.new_servings != 1 else "" }}
+  ({{ "%.2f"|format(result.ratio) }}&times;). Calories per serving stay the same &mdash; only ingredient
+  quantities change below. Non-numeric quantities (like "a pinch") couldn't be scaled automatically;
+  adjust them by hand if needed before saving.
+</p>
+
+<form method="post" action="/recipes/{{ recipe.id }}/apply_scale">
+<input type="hidden" name="new_servings" value="{{ result.new_servings }}">
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>Ingredient</th><th>Original</th><th>Scaled quantity</th><th>Unit</th></tr></thead>
+  <tbody>
+  {% for ing in result.ingredients %}
+    <tr>
+      <td>
+        <input type="hidden" name="ing_name" value="{{ ing.name }}">
+        {{ ing.name }}
+      </td>
+      <td class="hint">{{ ing.original_quantity or "" }} {{ ing.unit or "" }}</td>
+      <td><input type="text" name="ing_quantity" value="{{ ing.quantity or '' }}"></td>
+      <td>
+        <input type="hidden" name="ing_unit" value="{{ ing.unit or '' }}">{{ ing.unit or "" }}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4">This recipe has no ingredients to scale.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<button type="submit">Save as {{ result.new_servings }} serving{{ "s" if result.new_servings != 1 else "" }}</button>
+</form>
+{% endblock %}

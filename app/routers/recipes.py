@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import get_db
 from ..services import image_utils, recipe_import, settings_service, spoonacular_service
+from ..services.recipe_scaling import scale_recipe
 from ..services.recommender import match_recipe_to_pantry
 from ..templates_config import templates
 
@@ -292,6 +293,7 @@ def recipe_detail(recipe_id: int, request: Request, db: Session = Depends(get_db
             "cooked": request.query_params.get("cooked"),
             "error": request.query_params.get("error"),
             "calories_applied": request.query_params.get("calories_applied"),
+            "scaled": request.query_params.get("scaled"),
             "email_body": _build_recipe_email_body(recipe),
         },
     )
@@ -390,6 +392,56 @@ async def edit_recipe_submit(recipe_id: int, request: Request, db: Session = Dep
 
     db.commit()
     return RedirectResponse(f"/recipes/{recipe_id}", status_code=303)
+
+
+@router.post("/recipes/{recipe_id}/scale")
+def scale_recipe_preview(
+    recipe_id: int, request: Request, new_servings: str = Form(""), db: Session = Depends(get_db)
+):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+    try:
+        servings = int(new_servings)
+    except ValueError:
+        servings = 0
+    if servings < 1:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=bad_servings", status_code=303)
+
+    result = scale_recipe(recipe, servings)
+    return templates.TemplateResponse(
+        request, "recipe_scale_review.html", {"recipe": recipe, "result": result}
+    )
+
+
+@router.post("/recipes/{recipe_id}/apply_scale")
+async def apply_recipe_scale(recipe_id: int, request: Request, db: Session = Depends(get_db)):
+    recipe = db.get(models.Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse("/recipes", status_code=303)
+
+    form = await request.form()
+    try:
+        new_servings = int(form.get("new_servings") or 0)
+    except ValueError:
+        new_servings = 0
+    if new_servings < 1:
+        return RedirectResponse(f"/recipes/{recipe_id}?error=bad_servings", status_code=303)
+
+    names = form.getlist("ing_name")
+    quantities = form.getlist("ing_quantity")
+    units = form.getlist("ing_unit")
+
+    recipe.servings = new_servings
+    recipe.ingredients.clear()
+    db.flush()
+    for name, qty, unit in zip(names, quantities, units):
+        if name and name.strip():
+            recipe.ingredients.append(
+                models.RecipeIngredient(name=name.strip(), quantity=qty.strip() or None, unit=unit.strip() or None)
+            )
+    db.commit()
+    return RedirectResponse(f"/recipes/{recipe_id}?scaled=1", status_code=303)
 
 
 @router.get("/recipes/{recipe_id}/cook")
