@@ -10,6 +10,13 @@
 <p class="action-row">
   <a href="/meal-plan/shopping-list?start={{ start }}&end={{ end }}" class="btn btn-primary">Generate shopping list for this week</a>
 </p>
+{% if recipes %}
+<form method="post" action="/meal-plan/fill" class="action-row">
+  <input type="hidden" name="start" value="{{ start }}">
+  <button type="submit" class="btn btn-secondary">Fill empty slots with suggestions</button>
+</form>
+<p class="hint">Picks from your top-ranked recommendations, rotating through them so slots aren't all filled with the same recipe.</p>
+{% endif %}
 
 {% for day in days %}
 <details class="add-recipe" {% if day.is_today %}open{% endif %}>

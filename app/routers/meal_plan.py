@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .. import models
 from ..database import get_db
+from ..services.recommender import recommend_local
 from ..services.shopping_list import build_shopping_list
 from ..templates_config import templates
 
@@ -80,6 +81,33 @@ def add_meal_plan_entry(
             entry_date = _parse_date(meal_date, date.today())
             db.add(models.MealPlanEntry(date=entry_date, meal_type=meal_type, recipe_id=recipe.id))
             db.commit()
+    return RedirectResponse(f"/meal-plan?start={start}", status_code=303)
+
+
+@router.post("/meal-plan/fill")
+def fill_meal_plan(start: str = Form(""), db: Session = Depends(get_db)):
+    start_date = _parse_date(start, date.today())
+    days = [start_date + timedelta(days=i) for i in range(7)]
+    end_date = days[-1]
+
+    existing = (
+        db.query(models.MealPlanEntry)
+        .filter(models.MealPlanEntry.date >= start_date, models.MealPlanEntry.date <= end_date)
+        .all()
+    )
+    filled = {(e.date, e.meal_type) for e in existing}
+    empty_slots = [(d, mt) for d in days for mt in MEAL_TYPES if (d, mt) not in filled]
+
+    if empty_slots:
+        recipes = db.query(models.Recipe).all()
+        if recipes:
+            pantry = db.query(models.Ingredient).all()
+            ranked = [s["recipe"] for s in recommend_local(recipes, pantry)]
+            for i, (d, mt) in enumerate(empty_slots):
+                recipe = ranked[i % len(ranked)]
+                db.add(models.MealPlanEntry(date=d, meal_type=mt, recipe_id=recipe.id))
+            db.commit()
+
     return RedirectResponse(f"/meal-plan?start={start}", status_code=303)
 
 
