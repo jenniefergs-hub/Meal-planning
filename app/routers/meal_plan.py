@@ -120,11 +120,28 @@ def delete_meal_plan_entry(entry_id: int, start: str = Form(""), db: Session = D
     return RedirectResponse(f"/meal-plan?start={start}", status_code=303)
 
 
+def _build_shopping_list_email_body(items, start: str, end: str) -> str:
+    lines = [f"Shopping list: {start} to {end}", ""]
+    for item in items:
+        if item["merged"]:
+            qty_part = " ".join(p for p in [item["quantity"], item["unit"]] if p)
+            lines.append(f"- {qty_part + ' ' if qty_part else ''}{item['name']}")
+        else:
+            lines.append(f"- {item['name']}:")
+            for qty, unit, recipe_title in item["parts"]:
+                part = " ".join(p for p in [qty, unit] if p)
+                lines.append(f"    {part} ({recipe_title})" if part else f"    ({recipe_title})")
+    lines.append("")
+    lines.append("Sent from Kitchen Companion")
+    return "\n".join(lines)
+
+
 @router.get("/meal-plan/shopping-list")
 def shopping_list_page(request: Request, db: Session = Depends(get_db)):
     today = date.today()
     start = _parse_date(request.query_params.get("start"), today)
     end = _parse_date(request.query_params.get("end"), start + timedelta(days=6))
+    start_str, end_str = start.isoformat(), end.isoformat()
 
     entries = (
         db.query(models.MealPlanEntry)
@@ -141,8 +158,9 @@ def shopping_list_page(request: Request, db: Session = Depends(get_db)):
         "shopping_list.html",
         {
             "items": items,
-            "start": start.isoformat(),
-            "end": end.isoformat(),
+            "start": start_str,
+            "end": end_str,
             "has_entries": bool(entries),
+            "email_body": _build_shopping_list_email_body(items, start_str, end_str) if items else "",
         },
     )
