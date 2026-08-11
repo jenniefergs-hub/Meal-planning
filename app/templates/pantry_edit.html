@@ -2,7 +2,7 @@
 {% from "_macros.html" import unit_field %}
 {% block title %}Edit {{ item.name }}{% endblock %}
 {% block content %}
-<a href="/pantry">&larr; Back to Pantry</a>
+<a href="/pantry" class="btn btn-secondary">&larr; Back to Pantry</a>
 <h1>Edit ingredient</h1>
 
 {% if error == "missing_name" %}<p class="error">Name is required.</p>{% endif %}

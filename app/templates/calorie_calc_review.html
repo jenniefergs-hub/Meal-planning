@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Calorie estimate for {{ recipe.title }}{% endblock %}
 {% block content %}
-<a href="/recipes/{{ recipe.id }}">&larr; Back to {{ recipe.title }}</a>
+<a href="/recipes/{{ recipe.id }}" class="btn btn-secondary">&larr; Back to {{ recipe.title }}</a>
 <h1>Calorie estimate</h1>
 <p class="hint">
   Estimated by looking up each ingredient's nutrition on Spoonacular based on its name and quantity, then dividing the total by servings.
@@ -12,6 +12,7 @@
 </p>
 
 <div id="calorie-calc" data-servings="{{ result.servings }}">
+<div class="table-wrap">
 <table class="table">
   <thead><tr><th>Ingredient</th><th>Matched as</th><th>Calories</th></tr></thead>
   <tbody>
@@ -24,6 +25,7 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 
 <p>
   <strong>Total: <span id="calc-total-calories">{{ result.total_calories }}</span> kcal</strong>

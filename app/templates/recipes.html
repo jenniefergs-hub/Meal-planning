@@ -4,10 +4,10 @@
 {% block content %}
 <h1>Recipes</h1>
 
-<p>
-  <a class="import-link" href="/recipes/import">Import a recipe from a URL, PDF, or photo &rarr;</a>
+<p class="action-row">
+  <a class="btn btn-primary" href="/recipes/import">Import a recipe from a URL, PDF, or photo &rarr;</a>
+  <a class="btn btn-secondary" href="/recipes/top-by-person">Top Recipes by Person</a>
 </p>
-<p class="hint"><a href="/recipes/top-by-person">Top Recipes by Person</a></p>
 
 <details class="add-recipe">
 <summary>+ Add a recipe</summary>
@@ -60,7 +60,7 @@
     <option value="{{ t }}" {% if t == tag_filter %}selected{% endif %}>{{ t }}</option>
     {% endfor %}
   </select>
-  {% if category_filter or tag_filter %}<a href="/recipes">Clear filters</a>{% endif %}
+  {% if category_filter or tag_filter %}<a href="/recipes" class="btn btn-secondary">Clear filters</a>{% endif %}
 </form>
 {% endif %}
 

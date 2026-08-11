@@ -2,7 +2,7 @@
 {% from "_macros.html" import unit_field %}
 {% block title %}Review imported recipe{% endblock %}
 {% block content %}
-<a href="/recipes/import">&larr; Back to import</a>
+<a href="/recipes/import" class="btn btn-secondary">&larr; Back to import</a>
 <h1>Review before saving</h1>
 <p class="hint">
   {% if source == "url" and not parsed.fallback %}

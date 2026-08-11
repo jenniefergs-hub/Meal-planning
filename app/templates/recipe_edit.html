@@ -2,7 +2,7 @@
 {% from "_macros.html" import unit_field %}
 {% block title %}Edit {{ recipe.title }}{% endblock %}
 {% block content %}
-<a href="/recipes/{{ recipe.id }}">&larr; Back to {{ recipe.title }}</a>
+<a href="/recipes/{{ recipe.id }}" class="btn btn-secondary">&larr; Back to {{ recipe.title }}</a>
 <h1>Edit recipe</h1>
 
 {% if error == "missing_title" %}<p class="error">Title is required.</p>{% endif %}

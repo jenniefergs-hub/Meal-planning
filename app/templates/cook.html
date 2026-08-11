@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Cooked {{ recipe.title }}{% endblock %}
 {% block content %}
-<a href="/recipes/{{ recipe.id }}">&larr; Back to {{ recipe.title }}</a>
+<a href="/recipes/{{ recipe.id }}" class="btn btn-secondary">&larr; Back to {{ recipe.title }}</a>
 <h1>Mark "{{ recipe.title }}" as cooked</h1>
 <p class="hint">
   These pantry items look like they match this recipe's ingredients. Untick anything you didn't
@@ -9,6 +9,7 @@
 </p>
 
 <form method="post" action="/recipes/{{ recipe.id }}/cook">
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th></th><th>Pantry item</th><th>Qty</th><th>Unit</th></tr></thead>
     <tbody>
@@ -24,6 +25,7 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
 
   {% if unmatched_names %}
   <p class="hint">Not in your pantry (nothing to remove for these): {{ unmatched_names|join(", ") }}</p>

@@ -7,6 +7,7 @@
 {% for member, ratings in rankings.items() %}
 <h2>{{ member }}</h2>
 {% if ratings %}
+<div class="table-wrap">
 <table class="table">
   <thead><tr><th>#</th><th>Recipe</th><th>Rating</th><th>Calories</th></tr></thead>
   <tbody>
@@ -20,6 +21,7 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <p class="hint">{{ member }} hasn't rated any recipes yet.</p>
 {% endif %}

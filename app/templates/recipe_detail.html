@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ recipe.title }}{% endblock %}
 {% block content %}
-<a href="/recipes">&larr; Back to recipes</a>
+<a href="/recipes" class="btn btn-secondary">&larr; Back to recipes</a>
 <h1>{{ recipe.title }}</h1>
-<p>
-  <a href="/recipes/{{ recipe.id }}/edit">Edit recipe</a>
-  &middot;
-  <a href="mailto:?subject={{ ('Recipe: ' + recipe.title)|urlencode }}&body={{ email_body|urlencode }}">Email this recipe</a>
+<p class="action-row">
+  <a href="/recipes/{{ recipe.id }}/edit" class="btn btn-secondary">Edit recipe</a>
+  <a href="mailto:?subject={{ ('Recipe: ' + recipe.title)|urlencode }}&body={{ email_body|urlencode }}" class="btn btn-secondary">Email this recipe</a>
 </p>
 <p>
   {% if recipe.book_name %}From book: <strong>{{ recipe.book_name }}</strong>{% endif %}

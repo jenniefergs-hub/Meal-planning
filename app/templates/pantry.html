@@ -13,6 +13,7 @@
   <button type="submit">Add</button>
 </form>
 
+<div class="table-wrap">
 <table class="table">
   <thead>
     <tr><th>Name</th><th>Qty</th><th>Unit</th><th>Category</th><th>Source</th><th>Expiry</th><th></th></tr>
@@ -26,8 +27,8 @@
       <td>{{ item.category or "" }}</td>
       <td><span class="badge badge-{{ item.source }}">{{ item.source }}</span></td>
       <td>{{ item.expiry_date.strftime("%Y-%m-%d") if item.expiry_date else "" }}</td>
-      <td>
-        <a href="/pantry/{{ item.id }}/edit">Edit</a>
+      <td class="action-row">
+        <a href="/pantry/{{ item.id }}/edit" class="btn btn-secondary">Edit</a>
         <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove this ingredient?');" style="display:inline;">
           <button type="submit" class="danger">Remove</button>
         </form>
@@ -38,4 +39,5 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

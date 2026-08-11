@@ -53,6 +53,7 @@
 
 <h2>Pending items to review</h2>
 <p class="hint">Receipt parsing is best-effort. Approve items to add them to your pantry, or reject anything that isn't a food ingredient.</p>
+<div class="table-wrap">
 <table class="table">
   <thead><tr><th>Item</th><th>Qty</th><th>Source</th><th>Raw line</th><th></th></tr></thead>
   <tbody>
@@ -62,7 +63,7 @@
       <td>{{ p.parsed_quantity or "" }}</td>
       <td>{{ p.email_subject or "" }}</td>
       <td class="raw">{{ p.raw_line }}</td>
-      <td>
+      <td class="action-row">
         <form method="post" action="/gmail/pending/{{ p.id }}/approve" style="display:inline;">
           <button type="submit">Approve</button>
         </form>
@@ -76,4 +77,5 @@
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}
