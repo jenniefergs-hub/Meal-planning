@@ -137,6 +137,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .recipe-card .missing-list li { margin-bottom: 0.1rem; }
 .recipe-card .rating { color: var(--rating); font-size: 0.85rem; font-weight: 600; }
 .recipe-card .rating.unrated { color: var(--muted); font-weight: 400; }
+.recipe-card .cook-count { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0 0; }
 .recipe-card .category-label {
   color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
   font-family: var(--font-display); margin: 0.1rem 0;

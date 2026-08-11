@@ -75,6 +75,7 @@
     <p class="rating{{ '' if r.ratings else ' unrated' }}">
       {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} / 10 ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
     </p>
+    <p class="cook-count">{% if r.times_cooked %}Cooked {{ r.times_cooked }} time{{ "s" if r.times_cooked != 1 else "" }}{% else %}Never cooked{% endif %}</p>
     {% if r.tags %}
     <ul class="tag-list">
       {% for t in r.tags.split(",") %}<li class="tag">{{ t.strip() }}</li>{% endfor %}

@@ -15,6 +15,7 @@
     {% if s.recipe.category %}<p class="category-label">{{ s.recipe.category }}</p>{% endif %}
     <p class="calories">{{ "%.0f"|format(s.recipe.calories_per_serving) }} kcal / serving</p>
     <p class="rating{{ '' if s.avg_rating else ' unrated' }}">{% if s.avg_rating %}★ {{ "%.1f"|format(s.avg_rating) }} / 10 ({{ s.rating_count }}/4){% else %}Not rated{% endif %}</p>
+    <p class="cook-count">{% if s.recipe.times_cooked %}Cooked {{ s.recipe.times_cooked }} time{{ "s" if s.recipe.times_cooked != 1 else "" }}{% else %}Never cooked{% endif %}</p>
     {% if s.missing %}
     <p class="missing-label">Missing:</p>
     <ul class="missing-list">
