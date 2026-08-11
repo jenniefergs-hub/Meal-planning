@@ -18,7 +18,7 @@
   <label>Book name (if applicable) <input type="text" name="book_name" value="{{ recipe.book_name or '' }}"></label>
   <label>URL (if online) <input type="url" name="url" value="{{ recipe.url or '' }}"></label>
   <label>Servings <input type="number" name="servings" value="{{ recipe.servings }}" min="1"></label>
-  <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" value="{{ recipe.calories_per_serving }}" required></label>
+  <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" value="{{ recipe.calories_per_serving|round|int }}" required></label>
   <label>Prep time (minutes) <input type="number" name="prep_time_minutes" min="0" value="{{ recipe.prep_time_minutes or '' }}"></label>
   <label>Category <input type="text" name="category" placeholder="e.g. Dinner, Dessert, Breakfast" value="{{ recipe.category or '' }}"></label>
   <label>Tags <input type="text" name="tags" placeholder="Comma-separated, e.g. quick, vegetarian, freezer-friendly" value="{{ recipe.tags or '' }}"></label>

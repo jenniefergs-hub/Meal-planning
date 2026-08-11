@@ -79,15 +79,15 @@ def estimate_recipe_calories(api_key: str, recipe) -> dict:
             {
                 "line": original_line,
                 "matched_name": item.get("name") or original_line,
-                "calories": round(calories, 1),
+                "calories": round(calories),
             }
         )
 
     servings = recipe.servings or 1
     return {
         "breakdown": breakdown,
-        "total_calories": round(total_calories, 1),
+        "total_calories": round(total_calories),
         "servings": servings,
-        "per_serving": round(total_calories / servings, 1),
+        "per_serving": round(total_calories / servings),
         "unmatched_count": unmatched_count,
     }

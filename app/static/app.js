@@ -45,8 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const perServingDisplay = document.getElementById("calc-per-serving-display");
     const perServingInput = document.getElementById("per-serving-input");
 
-    const round1 = (n) => Math.round(n * 10) / 10;
-
     const recalculate = () => {
       const inputs = calorieCalcRoot.querySelectorAll(".ing-calorie-input");
       let total = 0;
@@ -54,8 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const val = parseFloat(input.value);
         total += isNaN(val) ? 0 : val;
       });
-      const perServing = round1(total / servings);
-      totalDisplay.textContent = round1(total);
+      const perServing = Math.round(total / servings);
+      totalDisplay.textContent = Math.round(total);
       perServingDisplay.textContent = perServing;
       perServingInput.value = perServing;
     };
