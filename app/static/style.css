@@ -124,6 +124,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 1rem; text-decoration: none; color: var(--text);
 }
+/* When a card needs independently-clickable bits (category/tag chips that
+   filter instead of opening the recipe), .recipe-card-wrap holds the box
+   styling instead and the inner .recipe-card link is reset to plain layout
+   so the two don't double up. */
+.recipe-card-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.recipe-card-wrap .recipe-card { background: none; border: none; padding: 0; display: block; }
 .recipe-thumb { width: 100%; height: 120px; object-fit: cover; border-radius: 6px 6px 0 0; margin: -1rem -1rem 0.6rem -1rem; width: calc(100% + 2rem); }
 .recipe-hero { width: 220px; max-width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin: 0.5rem 0; display: block; }
 .recipe-card h3 { margin: 0 0 0.4rem 0; font-size: 1rem; text-transform: none; letter-spacing: 0; }
@@ -138,16 +144,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .recipe-card .rating { color: var(--rating); font-size: 0.85rem; font-weight: 600; }
 .recipe-card .rating.unrated { color: var(--muted); font-weight: 400; }
 .recipe-card .cook-count { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0 0; }
-.recipe-card .category-label {
-  color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
-  font-family: var(--font-display); margin: 0.1rem 0;
+.category-label {
+  display: inline-block; color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-family: var(--font-display); margin: 0.1rem 0; text-decoration: none;
 }
+a.category-label:hover { color: var(--accent); }
 .tag-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0 0; padding: 0; }
 .tag {
   font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em;
   color: var(--accent); border: 1px solid #6B5427; border-radius: 3px; padding: 0.1rem 0.4rem;
 }
 .tag a { color: inherit; text-decoration: none; }
+.recipe-card-wrap .tag a:hover, .recipe-card-wrap a.category-label:hover { text-decoration: underline; }
 
 /* Anchor tags styled to look and read like buttons for standalone actions
    (Back, Edit, Email this recipe, Clear filters...) -- kept separate from

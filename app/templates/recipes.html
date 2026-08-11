@@ -66,22 +66,24 @@
 
 <div class="recipe-grid">
 {% for r in recipes %}
+  <div class="recipe-card-wrap">
   <a class="recipe-card" href="/recipes/{{ r.id }}">
     {% if r.image_data %}<img src="/recipes/{{ r.id }}/image" alt="" class="recipe-thumb">{% endif %}
     <h3>{{ r.title }}</h3>
     <p>{% if r.book_name %}{{ r.book_name }}{% elif r.url %}Online recipe{% else %}&nbsp;{% endif %}</p>
-    {% if r.category %}<p class="category-label">{{ r.category }}</p>{% endif %}
     <p class="calories">{{ "%.0f"|format(r.calories_per_serving) }} kcal / serving</p>
     <p class="rating{{ '' if r.ratings else ' unrated' }}">
       {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} / 10 ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
     </p>
     <p class="cook-count">{% if r.times_cooked %}Cooked {{ r.times_cooked }} time{{ "s" if r.times_cooked != 1 else "" }}{% else %}Never cooked{% endif %}</p>
-    {% if r.tags %}
-    <ul class="tag-list">
-      {% for t in r.tags.split(",") %}<li class="tag">{{ t.strip() }}</li>{% endfor %}
-    </ul>
-    {% endif %}
   </a>
+  {% if r.category %}<a class="category-label" href="/recipes?category={{ r.category|urlencode }}">{{ r.category }}</a>{% endif %}
+  {% if r.tags %}
+  <ul class="tag-list">
+    {% for t in r.tags.split(",") %}<li class="tag"><a href="/recipes?tag={{ t.strip()|urlencode }}">{{ t.strip() }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+  </div>
 {% else %}
   <p>No recipes {% if category_filter or tag_filter %}match that filter{% else %}saved yet. Add one above{% endif %}.</p>
 {% endfor %}
