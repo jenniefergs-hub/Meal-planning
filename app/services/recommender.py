@@ -61,6 +61,7 @@ def _score_recipe(recipe, pantry_names_lower):
         "matched_count": len(matched),
         "total_count": len(candidates),
         "match_pct": match_pct,
+        "matched": matched,  # RecipeIngredient objects -- keeps quantity/unit for display
         "missing": missing,  # RecipeIngredient objects -- keeps quantity/unit for display
         "avg_rating": avg_rating,
         "rating_count": len(recipe.ratings),

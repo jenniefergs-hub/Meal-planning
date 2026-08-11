@@ -99,6 +99,21 @@ document.addEventListener("DOMContentLoaded", () => {
           card.querySelector("h3").textContent = r.title;
           card.querySelectorAll("p")[0].textContent = `${r.used_count} on hand, ${r.missed_count} missing`;
           card.querySelectorAll("p")[1].textContent = caloriesText;
+          if (r.used && r.used.length) {
+            const onHandLabel = document.createElement("p");
+            onHandLabel.className = "on-hand-label";
+            onHandLabel.textContent = "On hand:";
+            card.appendChild(onHandLabel);
+
+            const onHandList = document.createElement("ul");
+            onHandList.className = "on-hand-list";
+            for (const name of r.used) {
+              const li = document.createElement("li");
+              li.textContent = name;
+              onHandList.appendChild(li);
+            }
+            card.appendChild(onHandList);
+          }
           if (r.missing.length) {
             const missingLabel = document.createElement("p");
             missingLabel.className = "missing-label";

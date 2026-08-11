@@ -141,6 +141,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .recipe-card .missing-list { color: var(--muted); font-size: 0.85rem; margin: 0; padding-left: 1.1rem; }
 .recipe-card .missing-list li { margin-bottom: 0.1rem; }
+.recipe-card .on-hand-label {
+  color: var(--muted); font-size: 0.72rem; margin: 0.5rem 0 0.2rem;
+  text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-display);
+}
+.recipe-card .on-hand-list { color: var(--muted); font-size: 0.85rem; margin: 0; padding-left: 1.1rem; }
+.recipe-card .on-hand-list li { margin-bottom: 0.1rem; }
 .recipe-card .rating { color: var(--rating); font-size: 0.85rem; font-weight: 600; }
 .recipe-card .rating.unrated { color: var(--muted); font-weight: 400; }
 .recipe-card .cook-count { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0 0; }

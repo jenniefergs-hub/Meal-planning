@@ -65,6 +65,11 @@ def online_recommendations(db: Session = Depends(get_db)):
                 for m in r.get("missedIngredients", [])
                 if not is_pantry_staple(m["name"])
             ]
+            used = [
+                (m.get("original") or m["name"]).strip()
+                for m in r.get("usedIngredients", [])
+                if not is_pantry_staple(m["name"])
+            ]
             out.append(
                 {
                     "id": r["id"],
@@ -72,6 +77,7 @@ def online_recommendations(db: Session = Depends(get_db)):
                     "image": r.get("image"),
                     "used_count": r.get("usedIngredientCount", 0),
                     "missed_count": len(missing),
+                    "used": used,
                     "missing": missing,
                     "calories": nutrition_map.get(r["id"]),
                     "url": f"https://spoonacular.com/recipes/{r['title'].replace(' ', '-')}-{r['id']}",
