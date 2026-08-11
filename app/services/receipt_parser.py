@@ -65,6 +65,9 @@ _MULTIPACK_RE = re.compile(
 )
 _WEIGHT_RE = re.compile(r"(?P<qty>\d+(?:\.\d+)?)\s*(?P<unit>kg|g|ml|cl|l)\b", re.IGNORECASE)
 _PACK_COUNT_RE = re.compile(r"(?P<qty>\d+)\s*(?:per\s*pack|pack)\b", re.IGNORECASE)
+# "Pack of 3 Red Peppers" -- the count comes after "pack of" instead of before
+# "per pack"/"pack".
+_PACK_OF_RE = re.compile(r"pack\s+of\s+(?P<qty>\d+)\b", re.IGNORECASE)
 
 # Retailer own-brand labels and common branded product lines, stripped from
 # the front of a name when present -- receipts always lead with the brand
@@ -119,22 +122,59 @@ def _extract_pack_size(name: str):
         cleaned = _clean_name(name[:m.start()] + name[m.end():])
         return (cleaned or name), m.group("qty"), "pack"
 
+    m = _PACK_OF_RE.search(name)
+    if m:
+        cleaned = _clean_name(name[:m.start()] + name[m.end():])
+        return (cleaned or name), m.group("qty"), "pack"
+
     return name, None, None
 
 
-def _finalize_item(name, raw_line, fallback_quantity=None):
+def _multiply_quantity(size_qty: str, factor: int) -> str:
+    """Scale a size (e.g. "650", "1.5", or the compound "4 x 330ml") by how
+    many such packs/weights were actually delivered."""
+    m = re.match(r"^(\d+)\s*x\s*(.+)$", size_qty, re.IGNORECASE)
+    if m:
+        return f"{int(m.group(1)) * factor} x {m.group(2)}"
+    try:
+        value = float(size_qty) * factor
+    except ValueError:
+        return size_qty
+    return str(int(value)) if value == int(value) else f"{value:g}"
+
+
+def _finalize_item(name, raw_line, delivered_count=None):
     """Turn a raw matched product name into an item dict: strip a known
-    brand prefix, then pull any pack size/weight out into quantity/unit,
-    falling back to fallback_quantity (e.g. a delivered count) when the name
-    itself didn't carry a size."""
+    brand prefix, then pull any pack size/weight out into quantity/unit.
+
+    When the receipt also reports more than one such pack/weight actually
+    delivered (delivered_count -- a leading "2 x" multiplier, or the
+    delivered side of a "<delivered>/<ordered>" ratio), the size is scaled
+    by that count -- two deliveries of "3 per pack" red peppers becomes
+    quantity 6, not 3. Falls back to delivered_count alone when the name
+    itself carried no recognizable size.
+    """
     name = strip_brand_name(name)
     display_name, size_qty, size_unit = _extract_pack_size(name)
     if len(display_name) < 3:
         display_name = name
+
+    try:
+        delivered_n = int(delivered_count) if delivered_count is not None else None
+    except (TypeError, ValueError):
+        delivered_n = None
+
+    if size_qty is None:
+        quantity = delivered_count
+    elif delivered_n and delivered_n > 1:
+        quantity = _multiply_quantity(size_qty, delivered_n)
+    else:
+        quantity = size_qty
+
     return {
         "raw_line": raw_line,
         "name": display_name,
-        "quantity": size_qty or fallback_quantity,
+        "quantity": quantity,
         "unit": size_unit,
     }
 
