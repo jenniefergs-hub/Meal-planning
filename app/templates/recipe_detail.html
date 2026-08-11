@@ -11,7 +11,13 @@
 <p>
   {% if recipe.book_name %}From book: <strong>{{ recipe.book_name }}</strong>{% endif %}
   {% if recipe.url %} &middot; <a href="{{ recipe.url }}" target="_blank" rel="noopener">Original recipe link</a>{% endif %}
+  {% if recipe.category %} &middot; <a href="/recipes?category={{ recipe.category|urlencode }}">{{ recipe.category }}</a>{% endif %}
 </p>
+{% if recipe.tags %}
+<ul class="tag-list">
+  {% for t in recipe.tags.split(",") %}<li class="tag"><a href="/recipes?tag={{ t.strip()|urlencode }}">{{ t.strip() }}</a></li>{% endfor %}
+</ul>
+{% endif %}
 
 {% if recipe.image_data %}
 <img src="/recipes/{{ recipe.id }}/image" alt="{{ recipe.title }}" style="max-width: 100%; border-radius: 10px; margin: 0.5rem 0; display: block;">

@@ -47,6 +47,8 @@ class Recipe(Base):
     last_cooked_at = Column(DateTime, nullable=True)
     image_data = Column(LargeBinary, nullable=True)
     image_content_type = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    tags = Column(String, nullable=True)  # comma-separated
 
     ingredients = relationship(
         "RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan"

@@ -12,6 +12,7 @@
     {% if s.recipe.image_data %}<img src="/recipes/{{ s.recipe.id }}/image" alt="" class="recipe-thumb">{% endif %}
     <h3>{{ s.recipe.title }}</h3>
     <p>{{ s.match_pct }}% of ingredients on hand ({{ s.matched_count }}/{{ s.total_count }})</p>
+    {% if s.recipe.category %}<p class="category-label">{{ s.recipe.category }}</p>{% endif %}
     <p class="calories">{{ "%.0f"|format(s.recipe.calories_per_serving) }} kcal / serving</p>
     <p class="rating{{ '' if s.avg_rating else ' unrated' }}">{% if s.avg_rating %}★ {{ "%.1f"|format(s.avg_rating) }} ({{ s.rating_count }}/4){% else %}Not rated{% endif %}</p>
     {% if s.missing %}

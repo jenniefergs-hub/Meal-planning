@@ -13,10 +13,43 @@ from ..templates_config import templates
 router = APIRouter()
 
 
+def _split_tags(tags: str | None) -> list[str]:
+    if not tags:
+        return []
+    return [t.strip() for t in tags.split(",") if t.strip()]
+
+
 @router.get("/recipes")
 def recipes_page(request: Request, db: Session = Depends(get_db)):
     recipes = db.query(models.Recipe).order_by(models.Recipe.created_at.desc()).all()
-    return templates.TemplateResponse(request, "recipes.html", {"recipes": recipes})
+
+    categories = sorted({r.category for r in recipes if r.category})
+
+    tags_by_key = {}
+    for r in recipes:
+        for t in _split_tags(r.tags):
+            tags_by_key.setdefault(t.lower(), t)
+    all_tags = sorted(tags_by_key.values())
+
+    category_filter = request.query_params.get("category") or ""
+    tag_filter = request.query_params.get("tag") or ""
+    if category_filter:
+        recipes = [r for r in recipes if r.category == category_filter]
+    if tag_filter:
+        tag_filter_key = tag_filter.lower()
+        recipes = [r for r in recipes if tag_filter_key in {t.lower() for t in _split_tags(r.tags)}]
+
+    return templates.TemplateResponse(
+        request,
+        "recipes.html",
+        {
+            "recipes": recipes,
+            "categories": categories,
+            "all_tags": all_tags,
+            "category_filter": category_filter,
+            "tag_filter": tag_filter,
+        },
+    )
 
 
 @router.get("/recipes/top-by-person")
@@ -138,6 +171,17 @@ def _parse_recipe_form(form) -> dict:
     prep_raw = form.get("prep_time_minutes")
     prep_time = int(prep_raw) if prep_raw and str(prep_raw).isdigit() else None
 
+    category = (form.get("category") or "").strip() or None
+
+    tags_seen = set()
+    tags_list = []
+    for t in (form.get("tags") or "").split(","):
+        t = t.strip()
+        if t and t.lower() not in tags_seen:
+            tags_seen.add(t.lower())
+            tags_list.append(t)
+    tags = ", ".join(tags_list) or None
+
     ingredients = []
     names = form.getlist("ing_name")
     qtys = form.getlist("ing_qty")
@@ -158,6 +202,8 @@ def _parse_recipe_form(form) -> dict:
         "servings": servings,
         "calories_per_serving": calories,
         "prep_time_minutes": prep_time,
+        "category": category,
+        "tags": tags,
         "ingredients": ingredients,
     }
 
@@ -178,6 +224,8 @@ async def add_recipe(request: Request, db: Session = Depends(get_db)):
         servings=data["servings"],
         calories_per_serving=data["calories_per_serving"],
         prep_time_minutes=data["prep_time_minutes"],
+        category=data["category"],
+        tags=data["tags"],
     )
     db.add(recipe)
     db.flush()
@@ -193,6 +241,10 @@ def _build_recipe_email_body(recipe) -> str:
     lines = []
     if recipe.book_name:
         lines.append(f"From: {recipe.book_name}")
+    if recipe.category:
+        lines.append(f"Category: {recipe.category}")
+    if recipe.tags:
+        lines.append(f"Tags: {recipe.tags}")
     lines.append(f"Servings: {recipe.servings}")
     lines.append(f"Calories per serving: {recipe.calories_per_serving:.0f} kcal")
     if recipe.prep_time_minutes:
@@ -321,6 +373,8 @@ async def edit_recipe_submit(recipe_id: int, request: Request, db: Session = Dep
     recipe.servings = data["servings"]
     recipe.calories_per_serving = data["calories_per_serving"]
     recipe.prep_time_minutes = data["prep_time_minutes"]
+    recipe.category = data["category"]
+    recipe.tags = data["tags"]
 
     # Replace the ingredient rows wholesale -- the form doesn't track which
     # existing row is which, so this is simpler and just as correct as a diff.

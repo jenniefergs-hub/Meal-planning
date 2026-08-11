@@ -67,3 +67,7 @@ def run_light_migrations():
             conn.execute(text(f"ALTER TABLE recipes ADD COLUMN image_data {binary_type}"))
         if "image_content_type" not in existing_cols:
             conn.execute(text("ALTER TABLE recipes ADD COLUMN image_content_type VARCHAR"))
+        if "category" not in existing_cols:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN category VARCHAR"))
+        if "tags" not in existing_cols:
+            conn.execute(text("ALTER TABLE recipes ADD COLUMN tags VARCHAR"))

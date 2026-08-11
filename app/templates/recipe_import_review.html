@@ -29,6 +29,8 @@
   <label>Servings <input type="number" name="servings" value="{{ parsed.servings or 1 }}" min="1"></label>
   <label>Calories per serving <input type="number" name="calories_per_serving" step="1" min="0" value="{{ parsed.calories_per_serving or '' }}" required></label>
   <label>Prep time (minutes) <input type="number" name="prep_time_minutes" min="0" value="{{ parsed.prep_time_minutes or '' }}"></label>
+  <label>Category <input type="text" name="category" placeholder="e.g. Dinner, Dessert, Breakfast"></label>
+  <label>Tags <input type="text" name="tags" placeholder="Comma-separated, e.g. quick, vegetarian, freezer-friendly"></label>
   <label>Instructions <textarea name="instructions" rows="8">{{ parsed.instructions }}</textarea></label>
 
   <h3>Ingredients</h3>
