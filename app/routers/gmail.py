@@ -159,15 +159,32 @@ def approve_pending(item_id: int, db: Session = Depends(get_db)):
     item = db.get(models.PendingReceiptItem, item_id)
     if item and item.status == "pending":
         source = "pdf" if item.message_id.startswith("pdf:") else "gmail"
-        db.add(
-            models.Ingredient(
-                name=item.parsed_name,
-                quantity=item.parsed_quantity,
-                unit=item.parsed_unit,
-                source=source,
-                raw_text=item.raw_line,
-            )
+
+        target_key = item.parsed_name.strip().lower()
+        existing = next(
+            (
+                ing for ing in db.query(models.Ingredient).order_by(models.Ingredient.added_at.desc())
+                if ing.name.strip().lower() == target_key
+            ),
+            None,
         )
+        merged_quantity = (
+            receipt_parser.add_quantities(existing.quantity, existing.unit, item.parsed_quantity, item.parsed_unit)
+            if existing else None
+        )
+
+        if existing and merged_quantity is not None:
+            existing.quantity = merged_quantity
+        else:
+            db.add(
+                models.Ingredient(
+                    name=item.parsed_name,
+                    quantity=item.parsed_quantity,
+                    unit=item.parsed_unit,
+                    source=source,
+                    raw_text=item.raw_line,
+                )
+            )
         item.status = "approved"
         db.commit()
     return RedirectResponse("/gmail", status_code=303)

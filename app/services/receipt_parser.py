@@ -130,6 +130,23 @@ def _extract_pack_size(name: str):
     return name, None, None
 
 
+def add_quantities(qty_a, unit_a, qty_b, unit_b):
+    """Combine two quantity/unit pairs into one summed quantity string, for
+    merging a newly-approved receipt item into a matching existing pantry
+    item instead of creating a duplicate row. Returns None (don't merge,
+    caller should keep them as separate rows) unless both quantities are
+    numeric and the units match -- treating "no unit" on both sides as a
+    match too.
+    """
+    if (unit_a or "").strip().lower() != (unit_b or "").strip().lower():
+        return None
+    try:
+        total = float(qty_a) + float(qty_b)
+    except (TypeError, ValueError):
+        return None
+    return str(int(total)) if total == int(total) else f"{total:g}"
+
+
 def _multiply_quantity(size_qty: str, factor: int) -> str:
     """Scale a size (e.g. "650", "1.5", or the compound "4 x 330ml") by how
     many such packs/weights were actually delivered."""
