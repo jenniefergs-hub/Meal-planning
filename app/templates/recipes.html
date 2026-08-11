@@ -46,23 +46,27 @@
   {% for c in categories %}<option value="{{ c }}">{% endfor %}
 </datalist>
 
-{% if categories or all_tags %}
 <form method="get" action="/recipes" class="inline-form">
+  <input type="text" name="ingredient" placeholder="Search by ingredient&hellip;" value="{{ ingredient_filter }}">
+  {% if categories %}
   <select name="category" onchange="this.form.submit()">
     <option value="">All categories</option>
     {% for c in categories %}
     <option value="{{ c }}" {% if c == category_filter %}selected{% endif %}>{{ c }}</option>
     {% endfor %}
   </select>
+  {% endif %}
+  {% if all_tags %}
   <select name="tag" onchange="this.form.submit()">
     <option value="">All tags</option>
     {% for t in all_tags %}
     <option value="{{ t }}" {% if t == tag_filter %}selected{% endif %}>{{ t }}</option>
     {% endfor %}
   </select>
-  {% if category_filter or tag_filter %}<a href="/recipes" class="btn btn-secondary">Clear filters</a>{% endif %}
+  {% endif %}
+  <button type="submit">Search</button>
+  {% if category_filter or tag_filter or ingredient_filter %}<a href="/recipes" class="btn btn-secondary">Clear filters</a>{% endif %}
 </form>
-{% endif %}
 
 <div class="recipe-grid">
 {% for r in recipes %}
@@ -85,7 +89,7 @@
   {% endif %}
   </div>
 {% else %}
-  <p>No recipes {% if category_filter or tag_filter %}match that filter{% else %}saved yet. Add one above{% endif %}.</p>
+  <p>No recipes {% if category_filter or tag_filter or ingredient_filter %}match that filter{% else %}saved yet. Add one above{% endif %}.</p>
 {% endfor %}
 </div>
 

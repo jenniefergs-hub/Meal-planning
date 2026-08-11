@@ -33,11 +33,15 @@ def recipes_page(request: Request, db: Session = Depends(get_db)):
 
     category_filter = request.query_params.get("category") or ""
     tag_filter = request.query_params.get("tag") or ""
+    ingredient_filter = request.query_params.get("ingredient") or ""
     if category_filter:
         recipes = [r for r in recipes if r.category == category_filter]
     if tag_filter:
         tag_filter_key = tag_filter.lower()
         recipes = [r for r in recipes if tag_filter_key in {t.lower() for t in _split_tags(r.tags)}]
+    if ingredient_filter:
+        term = ingredient_filter.strip().lower()
+        recipes = [r for r in recipes if any(term in ri.name.lower() for ri in r.ingredients)]
 
     return templates.TemplateResponse(
         request,
@@ -48,6 +52,7 @@ def recipes_page(request: Request, db: Session = Depends(get_db)):
             "all_tags": all_tags,
             "category_filter": category_filter,
             "tag_filter": tag_filter,
+            "ingredient_filter": ingredient_filter,
         },
     )
 
