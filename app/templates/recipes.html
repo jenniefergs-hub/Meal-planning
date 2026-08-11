@@ -73,7 +73,7 @@
     {% if r.category %}<p class="category-label">{{ r.category }}</p>{% endif %}
     <p class="calories">{{ "%.0f"|format(r.calories_per_serving) }} kcal / serving</p>
     <p class="rating{{ '' if r.ratings else ' unrated' }}">
-      {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
+      {% if r.ratings %}★ {{ "%.1f"|format((r.ratings|sum(attribute="rating")) / r.ratings|length) }} / 10 ({{ r.ratings|length }}/4){% else %}Not rated{% endif %}
     </p>
     {% if r.tags %}
     <ul class="tag-list">

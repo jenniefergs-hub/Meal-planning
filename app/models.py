@@ -77,7 +77,7 @@ class RecipeRating(Base):
     id = Column(Integer, primary_key=True)
     recipe_id = Column(Integer, ForeignKey("recipes.id"))
     member_name = Column(String, nullable=False)
-    rating = Column(Integer, nullable=False)  # 1-5
+    rating = Column(Integer, nullable=False)  # 1-10
     rated_at = Column(DateTime, default=datetime.utcnow)
 
     recipe = relationship("Recipe", back_populates="ratings")

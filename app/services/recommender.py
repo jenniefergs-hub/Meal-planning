@@ -53,7 +53,7 @@ def _score_recipe(recipe, pantry_names_lower):
     match_pct = round(len(matched) / total * 100)
 
     avg_rating = _avg_rating(recipe)
-    rating_score = (avg_rating / 5 * 100) if avg_rating is not None else NEUTRAL_RATING_SCORE
+    rating_score = (avg_rating / 10 * 100) if avg_rating is not None else NEUTRAL_RATING_SCORE
     combined_score = round(MATCH_WEIGHT * match_pct + RATING_WEIGHT * rating_score)
 
     return {

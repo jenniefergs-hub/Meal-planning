@@ -15,7 +15,7 @@
     <tr>
       <td>{{ loop.index }}</td>
       <td><a href="/recipes/{{ r.recipe.id }}">{{ r.recipe.title }}</a></td>
-      <td>★ {{ r.rating }}</td>
+      <td>★ {{ r.rating }} / 10</td>
       <td>{{ "%.0f"|format(r.recipe.calories_per_serving) }} kcal</td>
     </tr>
   {% endfor %}

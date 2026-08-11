@@ -8,6 +8,7 @@
   --accent: #E8A33D;
   --accent-ink: #1F2E27;
   --danger: #C1473A;
+  --rating: #E4C868;
 
   --font-display: Futura, "Avenir Next Condensed", "Trebuchet MS", sans-serif;
   --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -134,7 +135,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .recipe-card .missing-list { color: var(--muted); font-size: 0.85rem; margin: 0; padding-left: 1.1rem; }
 .recipe-card .missing-list li { margin-bottom: 0.1rem; }
-.recipe-card .rating { color: var(--danger); font-size: 0.85rem; font-weight: 600; }
+.recipe-card .rating { color: var(--rating); font-size: 0.85rem; font-weight: 600; }
 .recipe-card .rating.unrated { color: var(--muted); font-weight: 400; }
 .recipe-card .category-label {
   color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;

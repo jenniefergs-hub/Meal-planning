@@ -479,7 +479,7 @@ async def save_ratings(recipe_id: int, request: Request, db: Session = Depends(g
             value = int(raw)
         except ValueError:
             continue
-        if value < 1 or value > 5:
+        if value < 1 or value > 10:
             continue
         if existing:
             existing.rating = value

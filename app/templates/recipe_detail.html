@@ -79,7 +79,7 @@
 <h3>Ratings</h3>
 <p class="hint">
   {% if recipe.ratings %}
-    Average: {{ "%.1f"|format((recipe.ratings|sum(attribute="rating")) / recipe.ratings|length) }} / 5
+    Average: {{ "%.1f"|format((recipe.ratings|sum(attribute="rating")) / recipe.ratings|length) }} / 10
     ({{ recipe.ratings|length }}/4 rated)
   {% else %}
     Not rated yet.
@@ -90,8 +90,8 @@
   <label>{{ member }}
     <select name="rating_{{ loop.index0 }}">
       <option value="">No rating</option>
-      {% for n in [1, 2, 3, 4, 5] %}
-      <option value="{{ n }}" {% if ratings_by_member.get(member) == n %}selected{% endif %}>{{ n }} {{ "star" if n == 1 else "stars" }}</option>
+      {% for n in range(1, 11) %}
+      <option value="{{ n }}" {% if ratings_by_member.get(member) == n %}selected{% endif %}>{{ n }} / 10</option>
       {% endfor %}
     </select>
   </label>
