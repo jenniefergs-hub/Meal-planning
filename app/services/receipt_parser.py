@@ -84,11 +84,13 @@ BRAND_PREFIXES = [
     "Clarence Court", "Harry & Percy", "Black Sheep", "La Costena",
     "All Things", "Dell'Ugo", "Galbani", "Beavertown", "Clipper",
     "Kellogg's", "Kelloggs", "McVitie's", "McVities", "Cif", "Dettol",
+    "Burford Brown", "Burford Buff",
 ]
 BRAND_PREFIXES.sort(key=len, reverse=True)  # longest first so multi-word brands match whole
 _BRAND_PREFIX_RE = re.compile(
     r"^(?:" + "|".join(re.escape(b) for b in BRAND_PREFIXES) + r")\b\s*", re.IGNORECASE
 )
+_MAX_BRAND_STRIP_PASSES = 3  # e.g. "Clarence Court Burford Brown Eggs" has two stacked brand terms
 
 
 def _is_blacklisted(text: str) -> bool:
@@ -96,8 +98,13 @@ def _is_blacklisted(text: str) -> bool:
 
 
 def strip_brand_name(name: str) -> str:
-    stripped = _clean_name(_BRAND_PREFIX_RE.sub("", name, count=1))
-    return stripped if len(stripped) >= 3 else name
+    current = name
+    for _ in range(_MAX_BRAND_STRIP_PASSES):
+        stripped = _clean_name(_BRAND_PREFIX_RE.sub("", current, count=1))
+        if stripped == current or len(stripped) < 3:
+            break
+        current = stripped
+    return current
 
 
 def _extract_pack_size(name: str):
