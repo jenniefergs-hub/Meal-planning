@@ -54,9 +54,46 @@ _SECTION_WORD_RE = re.compile(r"^[A-Za-z]{3,20}$")
 _NOISE_LINE_RE = re.compile(r"^[→\-*•]+$")
 _SAVINGS_BREAKDOWN_RE = re.compile(r"^You've saved .* today$", re.IGNORECASE)
 
+# Product names commonly carry the actual pack size/weight -- "Chicken Breast
+# Fillets 650g", "Red Peppers 3 per pack", "Neck Oil IPA 4 x 330ml" -- which is
+# far more useful in the pantry than the delivered-item count these receipts
+# otherwise report (usually just "1"). Pull it out of the name into
+# quantity/unit wherever it appears; multipack first since "4 x 330ml" would
+# otherwise also match the plain weight pattern on just its "330ml" half.
+_MULTIPACK_RE = re.compile(
+    r"(?P<count>\d+)\s*[x×]\s*(?P<size>\d+(?:\.\d+)?)\s*(?P<unit>kg|g|ml|cl|l)\b", re.IGNORECASE
+)
+_WEIGHT_RE = re.compile(r"(?P<qty>\d+(?:\.\d+)?)\s*(?P<unit>kg|g|ml|cl|l)\b", re.IGNORECASE)
+_PACK_COUNT_RE = re.compile(r"(?P<qty>\d+)\s*(?:per\s*pack|pack)\b", re.IGNORECASE)
+
 
 def _is_blacklisted(text: str) -> bool:
     return bool(_BLACKLIST_RE.search(text))
+
+
+def _extract_pack_size(name: str):
+    """Pull a trailing pack size/weight out of a product name.
+
+    Returns (name_without_size, quantity, unit); quantity/unit are None if
+    the name didn't contain a recognizable size.
+    """
+    m = _MULTIPACK_RE.search(name)
+    if m:
+        quantity = f"{m.group('count')} x {m.group('size')}{m.group('unit').lower()}"
+        cleaned = _clean_name(name[:m.start()] + name[m.end():])
+        return (cleaned or name), quantity, None
+
+    m = _WEIGHT_RE.search(name)
+    if m:
+        cleaned = _clean_name(name[:m.start()] + name[m.end():])
+        return (cleaned or name), m.group("qty"), m.group("unit").lower()
+
+    m = _PACK_COUNT_RE.search(name)
+    if m:
+        cleaned = _clean_name(name[:m.start()] + name[m.end():])
+        return (cleaned or name), m.group("qty"), "pack"
+
+    return name, None, None
 
 
 def _extract_wrapped_table_items(lines):
@@ -87,11 +124,14 @@ def _extract_wrapped_table_items(lines):
                     name = _clean_name(" ".join(name_buffer))
                     name_buffer = []
                     if delivered != "0" and len(name) >= 3 and not _is_blacklisted(name):
+                        display_name, size_qty, size_unit = _extract_pack_size(name)
+                        if len(display_name) < 3:
+                            display_name = name
                         items.append({
                             "raw_line": f"{name} {line} {lines[j].strip()}",
-                            "name": name,
-                            "quantity": delivered,
-                            "unit": None,
+                            "name": display_name,
+                            "quantity": size_qty or delivered,
+                            "unit": size_unit,
                         })
                     i = j + 1
                     continue
@@ -125,7 +165,15 @@ def parse_text_lines(text: str):
         if m:
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                items.append({"raw_line": line, "name": name, "quantity": m.group("qty"), "unit": None})
+                display_name, size_qty, size_unit = _extract_pack_size(name)
+                if len(display_name) < 3:
+                    display_name = name
+                items.append({
+                    "raw_line": line,
+                    "name": display_name,
+                    "quantity": size_qty or m.group("qty"),
+                    "unit": size_unit,
+                })
             continue
 
         m = NAME_DELIVERED_PRICE_RE.match(line)
@@ -135,14 +183,30 @@ def parse_text_lines(text: str):
                 continue  # nothing was actually delivered (substituted/unavailable item)
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                items.append({"raw_line": line, "name": name, "quantity": delivered, "unit": None})
+                display_name, size_qty, size_unit = _extract_pack_size(name)
+                if len(display_name) < 3:
+                    display_name = name
+                items.append({
+                    "raw_line": line,
+                    "name": display_name,
+                    "quantity": size_qty or delivered,
+                    "unit": size_unit,
+                })
             continue
 
         m = NAME_PRICE_RE.match(line)
         if m:
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                items.append({"raw_line": line, "name": name, "quantity": None, "unit": None})
+                display_name, size_qty, size_unit = _extract_pack_size(name)
+                if len(display_name) < 3:
+                    display_name = name
+                items.append({
+                    "raw_line": line,
+                    "name": display_name,
+                    "quantity": size_qty,
+                    "unit": size_unit,
+                })
 
     items.extend(_extract_wrapped_table_items(lines))
     return items
@@ -184,7 +248,15 @@ def parse_html(html: str):
             key = name.lower()
             if len(name) >= 3 and key not in seen:
                 seen.add(key)
-                items.append({"raw_line": row_text, "name": name, "quantity": qty, "unit": None})
+                display_name, size_qty, size_unit = _extract_pack_size(name)
+                if len(display_name) < 3:
+                    display_name = name
+                items.append({
+                    "raw_line": row_text,
+                    "name": display_name,
+                    "quantity": size_qty or qty,
+                    "unit": size_unit,
+                })
 
     return items
 

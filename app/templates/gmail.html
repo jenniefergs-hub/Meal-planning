@@ -60,7 +60,7 @@
   {% for p in pending %}
     <tr>
       <td>{{ p.parsed_name }}</td>
-      <td>{{ p.parsed_quantity or "" }}</td>
+      <td>{{ p.parsed_quantity or "" }} {{ p.parsed_unit or "" }}</td>
       <td>{{ p.email_subject or "" }}</td>
       <td class="raw">{{ p.raw_line }}</td>
       <td class="action-row">
