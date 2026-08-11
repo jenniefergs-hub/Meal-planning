@@ -19,7 +19,7 @@
 {% endif %}
 
 {% if recipe.image_data %}
-<img src="/recipes/{{ recipe.id }}/image" alt="{{ recipe.title }}" style="max-width: 100%; border-radius: 10px; margin: 0.5rem 0; display: block;">
+<img src="/recipes/{{ recipe.id }}/image" alt="{{ recipe.title }}" class="recipe-hero">
 <form method="post" action="/recipes/{{ recipe.id }}/image/delete" onsubmit="return confirm('Remove this image?');">
   <button type="submit" class="danger">Remove image</button>
 </form>
