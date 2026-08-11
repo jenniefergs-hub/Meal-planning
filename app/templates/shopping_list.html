@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Shopping List{% endblock %}
+{% block content %}
+<a href="/meal-plan?start={{ start }}" class="btn btn-secondary">&larr; Back to meal plan</a>
+<h1>Shopping List</h1>
+<p class="hint">
+  {{ start }} to {{ end }} &mdash; ingredients your planned meals need that aren't already in your pantry
+  (pantry staples like oil, salt, and water are assumed on hand).
+</p>
+
+{% if not has_entries %}
+<p>No meals planned for this date range yet -- go to the <a href="/meal-plan">meal plan</a> and add some.</p>
+{% elif not items %}
+<p class="success">Nothing to buy &mdash; you already have everything for these meals!</p>
+{% else %}
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>Item</th><th>Quantity</th><th>Needed for</th></tr></thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td>{{ item.name }}</td>
+      <td>
+        {% if item.merged %}
+          {{ item.quantity or "" }} {{ item.unit or "" }}
+        {% else %}
+          <ul class="missing-list">
+          {% for qty, unit, recipe_title in item.parts %}
+            <li>{% if qty %}{{ qty }} {% endif %}{% if unit %}{{ unit }} {% endif %}<span class="hint">({{ recipe_title }})</span></li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+      </td>
+      <td>{{ item.needed_for|join(", ") }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

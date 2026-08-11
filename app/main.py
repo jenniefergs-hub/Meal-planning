@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from . import models
 from .auth_middleware import BasicAuthMiddleware
 from .database import Base, engine, get_db, run_light_migrations
-from .routers import gmail, ingredients, recipes, recommendations, settings_router
+from .routers import gmail, ingredients, meal_plan, recipes, recommendations, settings_router
 from .templates_config import templates
 
 Base.metadata.create_all(bind=engine)
@@ -36,6 +36,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 app.include_router(ingredients.router)
 app.include_router(recipes.router)
 app.include_router(recommendations.router)
+app.include_router(meal_plan.router)
 app.include_router(gmail.router)
 app.include_router(settings_router.router)
 

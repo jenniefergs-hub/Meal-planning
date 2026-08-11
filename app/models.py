@@ -6,6 +6,7 @@ from sqlalchemy import (
     String,
     Float,
     Text,
+    Date,
     DateTime,
     ForeignKey,
     UniqueConstraint,
@@ -56,6 +57,9 @@ class Recipe(Base):
     ratings = relationship(
         "RecipeRating", back_populates="recipe", cascade="all, delete-orphan"
     )
+    meal_plan_entries = relationship(
+        "MealPlanEntry", back_populates="recipe", cascade="all, delete-orphan"
+    )
 
 
 class RecipeIngredient(Base):
@@ -81,6 +85,18 @@ class RecipeRating(Base):
     rated_at = Column(DateTime, default=datetime.utcnow)
 
     recipe = relationship("Recipe", back_populates="ratings")
+
+
+class MealPlanEntry(Base):
+    __tablename__ = "meal_plan_entries"
+
+    id = Column(Integer, primary_key=True)
+    date = Column(Date, nullable=False)
+    meal_type = Column(String, nullable=False)  # breakfast | lunch | dinner
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", back_populates="meal_plan_entries")
 
 
 class GmailProcessedMessage(Base):

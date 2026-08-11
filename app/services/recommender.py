@@ -111,6 +111,15 @@ def _score_recipe(recipe, pantry_names_lower):
     }
 
 
+def missing_ingredients(recipe, pantry_ingredients):
+    """Recipe ingredients (excluding pantry staples like oil/salt/water) that
+    don't match anything currently in the pantry -- used to build a shopping
+    list. Returns RecipeIngredient objects, keeping their quantity/unit.
+    """
+    pantry_names_lower = [p.name.lower() for p in pantry_ingredients]
+    return _score_recipe(recipe, pantry_names_lower)["missing"]
+
+
 def recommend_local(recipes, pantry_ingredients):
     pantry_names_lower = [p.name.lower() for p in pantry_ingredients]
     scored = [_score_recipe(r, pantry_names_lower) for r in recipes]

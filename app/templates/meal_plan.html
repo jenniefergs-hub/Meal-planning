@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Meal Plan{% endblock %}
+{% block content %}
+<h1>Meal Plan</h1>
+
+<p class="action-row">
+  <a href="/meal-plan?start={{ prev_start }}" class="btn btn-secondary">&larr; Previous week</a>
+  <a href="/meal-plan?start={{ next_start }}" class="btn btn-secondary">Next week &rarr;</a>
+</p>
+<p class="action-row">
+  <a href="/meal-plan/shopping-list?start={{ start }}&end={{ end }}" class="btn btn-primary">Generate shopping list for this week</a>
+</p>
+
+{% for day in days %}
+<details class="add-recipe" {% if day.is_today %}open{% endif %}>
+<summary>{{ day.label }}{% if day.is_today %} (today){% endif %}</summary>
+
+{% for mt in meal_types %}
+<h3>{{ mt|capitalize }}</h3>
+<ul>
+  {% for entry in day.entries[mt] %}
+  <li>
+    <a href="/recipes/{{ entry.recipe.id }}">{{ entry.recipe.title }}</a>
+    ({{ "%.0f"|format(entry.recipe.calories_per_serving) }} kcal)
+    <form method="post" action="/meal-plan/{{ entry.id }}/delete" style="display:inline;">
+      <input type="hidden" name="start" value="{{ start }}">
+      <button type="submit" class="danger">Remove</button>
+    </form>
+  </li>
+  {% else %}
+  <li class="hint">Nothing planned</li>
+  {% endfor %}
+</ul>
+<form method="post" action="/meal-plan/add" class="inline-form">
+  <input type="hidden" name="date" value="{{ day.date }}">
+  <input type="hidden" name="meal_type" value="{{ mt }}">
+  <input type="hidden" name="start" value="{{ start }}">
+  <select name="recipe_id" required>
+    <option value="" disabled selected>Add a recipe&hellip;</option>
+    {% for r in recipes %}
+    <option value="{{ r.id }}">{{ r.title }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Add</button>
+</form>
+{% endfor %}
+
+</details>
+{% endfor %}
+
+{% if not recipes %}
+<p class="hint">You don't have any saved recipes yet -- <a href="/recipes">add some</a> before planning meals.</p>
+{% endif %}
+{% endblock %}
