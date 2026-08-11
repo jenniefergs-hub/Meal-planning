@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..database import get_db
+from ..services.receipt_parser import strip_brand_name
 from ..templates_config import templates
 
 router = APIRouter()
@@ -14,7 +15,23 @@ router = APIRouter()
 @router.get("/pantry")
 def pantry_page(request: Request, db: Session = Depends(get_db)):
     items = db.query(models.Ingredient).order_by(models.Ingredient.added_at.desc()).all()
-    return templates.TemplateResponse(request, "pantry.html", {"items": items})
+    return templates.TemplateResponse(
+        request, "pantry.html", {"items": items, "brands_stripped": request.query_params.get("brands_stripped")}
+    )
+
+
+@router.post("/pantry/strip_brands")
+def strip_pantry_brands(db: Session = Depends(get_db)):
+    items = db.query(models.Ingredient).all()
+    updated = 0
+    for item in items:
+        cleaned = strip_brand_name(item.name)
+        if cleaned != item.name:
+            item.name = cleaned
+            updated += 1
+    if updated:
+        db.commit()
+    return RedirectResponse(f"/pantry?brands_stripped={updated}", status_code=303)
 
 
 def _parse_expiry(expiry_date: str):

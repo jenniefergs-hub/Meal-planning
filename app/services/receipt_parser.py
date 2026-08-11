@@ -92,7 +92,7 @@ def _is_blacklisted(text: str) -> bool:
     return bool(_BLACKLIST_RE.search(text))
 
 
-def _strip_brand(name: str) -> str:
+def strip_brand_name(name: str) -> str:
     stripped = _clean_name(_BRAND_PREFIX_RE.sub("", name, count=1))
     return stripped if len(stripped) >= 3 else name
 
@@ -127,7 +127,7 @@ def _finalize_item(name, raw_line, fallback_quantity=None):
     brand prefix, then pull any pack size/weight out into quantity/unit,
     falling back to fallback_quantity (e.g. a delivered count) when the name
     itself didn't carry a size."""
-    name = _strip_brand(name)
+    name = strip_brand_name(name)
     display_name, size_qty, size_unit = _extract_pack_size(name)
     if len(display_name) < 3:
         display_name = name
