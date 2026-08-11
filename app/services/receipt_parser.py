@@ -66,9 +66,35 @@ _MULTIPACK_RE = re.compile(
 _WEIGHT_RE = re.compile(r"(?P<qty>\d+(?:\.\d+)?)\s*(?P<unit>kg|g|ml|cl|l)\b", re.IGNORECASE)
 _PACK_COUNT_RE = re.compile(r"(?P<qty>\d+)\s*(?:per\s*pack|pack)\b", re.IGNORECASE)
 
+# Retailer own-brand labels and common branded product lines, stripped from
+# the front of a name when present -- receipts always lead with the brand
+# ("Ocado British Chicken Breast Fillets", "M&S Seedless White Grapes"), so a
+# pantry item ends up as just the product itself ("British Chicken Breast
+# Fillets", "Seedless White Grapes"). Not exhaustive -- there's no complete
+# list of every grocery brand -- so this only helps for recognized names and
+# otherwise leaves the name untouched, consistent with best-effort parsing
+# the user is expected to review before saving.
+BRAND_PREFIXES = [
+    "Marks & Spencer", "Marks and Spencer", "M&S",
+    "Sainsbury's", "Sainsburys", "Morrisons", "Waitrose", "Ocado",
+    "Tesco", "Asda", "Aldi", "Lidl", "Co-op", "Cooperative", "Iceland",
+    "Clarence Court", "Harry & Percy", "Black Sheep", "La Costena",
+    "All Things", "Dell'Ugo", "Galbani", "Beavertown", "Clipper",
+    "Kellogg's", "Kelloggs", "McVitie's", "McVities", "Cif", "Dettol",
+]
+BRAND_PREFIXES.sort(key=len, reverse=True)  # longest first so multi-word brands match whole
+_BRAND_PREFIX_RE = re.compile(
+    r"^(?:" + "|".join(re.escape(b) for b in BRAND_PREFIXES) + r")\b\s*", re.IGNORECASE
+)
+
 
 def _is_blacklisted(text: str) -> bool:
     return bool(_BLACKLIST_RE.search(text))
+
+
+def _strip_brand(name: str) -> str:
+    stripped = _clean_name(_BRAND_PREFIX_RE.sub("", name, count=1))
+    return stripped if len(stripped) >= 3 else name
 
 
 def _extract_pack_size(name: str):
@@ -94,6 +120,23 @@ def _extract_pack_size(name: str):
         return (cleaned or name), m.group("qty"), "pack"
 
     return name, None, None
+
+
+def _finalize_item(name, raw_line, fallback_quantity=None):
+    """Turn a raw matched product name into an item dict: strip a known
+    brand prefix, then pull any pack size/weight out into quantity/unit,
+    falling back to fallback_quantity (e.g. a delivered count) when the name
+    itself didn't carry a size."""
+    name = _strip_brand(name)
+    display_name, size_qty, size_unit = _extract_pack_size(name)
+    if len(display_name) < 3:
+        display_name = name
+    return {
+        "raw_line": raw_line,
+        "name": display_name,
+        "quantity": size_qty or fallback_quantity,
+        "unit": size_unit,
+    }
 
 
 def _extract_wrapped_table_items(lines):
@@ -124,15 +167,9 @@ def _extract_wrapped_table_items(lines):
                     name = _clean_name(" ".join(name_buffer))
                     name_buffer = []
                     if delivered != "0" and len(name) >= 3 and not _is_blacklisted(name):
-                        display_name, size_qty, size_unit = _extract_pack_size(name)
-                        if len(display_name) < 3:
-                            display_name = name
-                        items.append({
-                            "raw_line": f"{name} {line} {lines[j].strip()}",
-                            "name": display_name,
-                            "quantity": size_qty or delivered,
-                            "unit": size_unit,
-                        })
+                        items.append(_finalize_item(
+                            name, f"{name} {line} {lines[j].strip()}", delivered
+                        ))
                     i = j + 1
                     continue
             continue
@@ -165,15 +202,7 @@ def parse_text_lines(text: str):
         if m:
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                display_name, size_qty, size_unit = _extract_pack_size(name)
-                if len(display_name) < 3:
-                    display_name = name
-                items.append({
-                    "raw_line": line,
-                    "name": display_name,
-                    "quantity": size_qty or m.group("qty"),
-                    "unit": size_unit,
-                })
+                items.append(_finalize_item(name, line, m.group("qty")))
             continue
 
         m = NAME_DELIVERED_PRICE_RE.match(line)
@@ -183,30 +212,14 @@ def parse_text_lines(text: str):
                 continue  # nothing was actually delivered (substituted/unavailable item)
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                display_name, size_qty, size_unit = _extract_pack_size(name)
-                if len(display_name) < 3:
-                    display_name = name
-                items.append({
-                    "raw_line": line,
-                    "name": display_name,
-                    "quantity": size_qty or delivered,
-                    "unit": size_unit,
-                })
+                items.append(_finalize_item(name, line, delivered))
             continue
 
         m = NAME_PRICE_RE.match(line)
         if m:
             name = _clean_name(m.group("name"))
             if len(name) >= 3 and not _is_blacklisted(name):
-                display_name, size_qty, size_unit = _extract_pack_size(name)
-                if len(display_name) < 3:
-                    display_name = name
-                items.append({
-                    "raw_line": line,
-                    "name": display_name,
-                    "quantity": size_qty,
-                    "unit": size_unit,
-                })
+                items.append(_finalize_item(name, line))
 
     items.extend(_extract_wrapped_table_items(lines))
     return items
@@ -248,15 +261,7 @@ def parse_html(html: str):
             key = name.lower()
             if len(name) >= 3 and key not in seen:
                 seen.add(key)
-                display_name, size_qty, size_unit = _extract_pack_size(name)
-                if len(display_name) < 3:
-                    display_name = name
-                items.append({
-                    "raw_line": row_text,
-                    "name": display_name,
-                    "quantity": size_qty or qty,
-                    "unit": size_unit,
-                })
+                items.append(_finalize_item(name, row_text, qty))
 
     return items
 
