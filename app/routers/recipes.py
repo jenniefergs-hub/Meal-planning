@@ -20,6 +20,18 @@ def _split_tags(tags: str | None) -> list[str]:
     return [t.strip() for t in tags.split(",") if t.strip()]
 
 
+def _sentence_case(text: str) -> str:
+    """First letter capitalized, rest lowercase -- except text that's
+    already ALL CAPS, which is left alone since that's almost always a
+    deliberate acronym (e.g. "BBQ") rather than just typed carelessly.
+    Tag/category chips are still shown fully uppercase everywhere via CSS
+    regardless of this -- that's a separate, deliberate style choice."""
+    text = text.strip()
+    if not text or text.isupper():
+        return text
+    return text[0].upper() + text[1:].lower()
+
+
 @router.get("/recipes")
 def recipes_page(request: Request, db: Session = Depends(get_db)):
     recipes = db.query(models.Recipe).order_by(models.Recipe.created_at.desc()).all()
@@ -54,8 +66,31 @@ def recipes_page(request: Request, db: Session = Depends(get_db)):
             "category_filter": category_filter,
             "tag_filter": tag_filter,
             "ingredient_filter": ingredient_filter,
+            "casing_fixed": request.query_params.get("casing_fixed"),
         },
     )
+
+
+@router.post("/recipes/normalize_casing")
+def normalize_tag_category_casing(db: Session = Depends(get_db)):
+    updated = 0
+    for r in db.query(models.Recipe).all():
+        changed = False
+        if r.category:
+            fixed = _sentence_case(r.category)
+            if fixed != r.category:
+                r.category = fixed
+                changed = True
+        if r.tags:
+            fixed_tags = ", ".join(_sentence_case(t) for t in _split_tags(r.tags))
+            if fixed_tags != r.tags:
+                r.tags = fixed_tags
+                changed = True
+        if changed:
+            updated += 1
+    if updated:
+        db.commit()
+    return RedirectResponse(f"/recipes?casing_fixed={updated}", status_code=303)
 
 
 @router.get("/recipes/top-by-person")
@@ -177,12 +212,12 @@ def _parse_recipe_form(form) -> dict:
     prep_raw = form.get("prep_time_minutes")
     prep_time = int(prep_raw) if prep_raw and str(prep_raw).isdigit() else None
 
-    category = (form.get("category") or "").strip() or None
+    category = _sentence_case(form.get("category") or "") or None
 
     tags_seen = set()
     tags_list = []
     for t in (form.get("tags") or "").split(","):
-        t = t.strip()
+        t = _sentence_case(t)
         if t and t.lower() not in tags_seen:
             tags_seen.add(t.lower())
             tags_list.append(t)

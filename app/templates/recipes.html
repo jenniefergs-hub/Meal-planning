@@ -9,6 +9,15 @@
   <a class="btn btn-secondary" href="/recipes/top-by-person">Top Recipes by Person</a>
 </p>
 
+{% if casing_fixed is not none %}
+  <p class="success">
+    {% if casing_fixed == "0" %}Nothing needed fixing.{% else %}Fixed casing on {{ casing_fixed }} recipe{{ "" if casing_fixed == "1" else "s" }}.{% endif %}
+  </p>
+{% endif %}
+<form method="post" action="/recipes/normalize_casing" class="action-row" style="margin-bottom: 1rem;">
+  <button type="submit" class="btn btn-secondary">Fix tag/category casing</button>
+</form>
+
 <details class="add-recipe">
 <summary>+ Add a recipe</summary>
 <form method="post" action="/recipes/add" id="recipe-form">
