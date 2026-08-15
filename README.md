@@ -5,7 +5,6 @@ A local web app that:
 - Tracks ingredients you have on hand (added manually, or pulled from grocery receipt emails via Gmail).
 - Stores recipes from books you own (with calories, ingredients, instructions).
 - Recommends recipes — from your own collection and from the web (Spoonacular) — ranked by how many ingredients you already have, with calories shown for every recipe.
-- Suggests flavor pairings — look up what goes with an ingredient, check compatibility across a combo of ingredients, or get pairing ideas based on your pantry.
 
 ## 1. Install
 
@@ -58,7 +57,6 @@ Click **Sync receipts now** to fetch and parse matching emails. Parsed line item
 - **Pantry**: your current ingredients — add manually, or approve items pulled from Gmail receipts.
 - **Recipes**: your recipe book. Add recipes from cookbooks you own (title, book name, ingredients, instructions, servings, and **calories per serving**, which is required) or manually add an online recipe you like (paste the URL). On a recipe's page, click **"I made this"** to update your pantry (see below) and rate it.
 - **Recommendations**: ranks your saved recipes by a mix of ingredient match and household ratings, and (with a Spoonacular key) searches the web for recipes matching your pantry, showing calories and missing ingredients for each.
-- **Flavor Combos**: look up what pairs with a single ingredient, check compatibility across a comma-separated combo (e.g. `lemon, garlic, chicken`) and see what pairs with all of them at once, or browse suggestions generated from your current pantry — both "ready to combine" pairs you already have, and "consider adding" shopping ideas. Backed by a curated pairing dataset (`app/services/flavor_data.py`), not an external API, so it works offline and needs no key.
 - **Settings**: household member names, Spoonacular API key, and Gmail credentials.
 
 ### Marking a recipe as cooked
@@ -68,20 +66,6 @@ On a recipe's page, click **"I made this — update my pantry"**. The app shows 
 ### Ratings
 
 Set up to 4 household member names in **Settings**. Each recipe page lets every member rate it 1–5 stars. Ratings feed into the **Recommendations** ranking (65% ingredient match, 35% average rating), so recipes your household rates highly get suggested more often; unrated recipes are scored neutrally so they aren't buried.
-
-## 6. Deploying to Render (get a public link)
-
-This app was built as **local-only and single-user, with no login system** — anything you deploy publicly is reachable by anyone with the URL, including any Spoonacular key or Gmail OAuth secret you've pasted into Settings. Only deploy it if you're comfortable with that, and set the Basic Auth env vars below so it isn't wide open.
-
-1. Push this repo to GitHub (already done if you're reading this from your own fork).
-2. In the [Render dashboard](https://dashboard.render.com/), **New → Blueprint**, and point it at this repo. Render will read `render.yaml` and provision a web service with a 1GB persistent disk (so your SQLite data survives restarts and redeploys).
-3. Before the first deploy, set these environment variables on the service (Render will prompt for them since they're marked `sync: false` in the blueprint):
-   - `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` — a username/password Render will require via a browser prompt before serving any page. Strongly recommended.
-4. Deploy. Render gives you a `https://<service-name>.onrender.com` URL.
-5. If you use Gmail import, add `https://<your-render-url>/gmail/oauth2callback` as an **additional** authorized redirect URI on your Google OAuth client (Credentials → your client → Authorized redirect URIs) — the `localhost` one from step 4 above can stay too, so both local and hosted use work.
-6. The free Render plan spins down after inactivity and cold-starts on the next request (a several-second delay) — upgrade to a paid plan for an always-on service.
-
-Without `render.yaml`'s disk, Render's default filesystem is ephemeral and your pantry/recipes/settings would reset on every redeploy — the blueprint's `disk:` section avoids that by mounting persistent storage at `/var/data` (via the `DATA_DIR` env var, read in `app/database.py`).
 
 ## Notes and limitations
 
