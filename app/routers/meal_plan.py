@@ -14,6 +14,27 @@ router = APIRouter()
 
 MEAL_TYPES = ["breakfast", "lunch", "dinner"]
 
+# Recipe.category is free text, so match a recipe to a meal type via its
+# category (case-insensitively) plus a few common synonyms -- a recipe with
+# no category, or one that doesn't map to breakfast/lunch/dinner (e.g.
+# "Dessert", "Side"), isn't confidently any of these, so fill_meal_plan
+# leaves such slots empty rather than guess.
+MEAL_TYPE_CATEGORY_ALIASES = {
+    "breakfast": {"breakfast", "brunch"},
+    "lunch": {"lunch"},
+    "dinner": {"dinner", "supper", "tea", "main", "main course"},
+}
+
+
+def _recipe_meal_type(recipe):
+    if not recipe.category:
+        return None
+    category = recipe.category.strip().lower()
+    return next(
+        (mt for mt, aliases in MEAL_TYPE_CATEGORY_ALIASES.items() if category in aliases),
+        None,
+    )
+
 
 def _parse_date(value, fallback: date) -> date:
     try:
@@ -63,6 +84,8 @@ def meal_plan_page(request: Request, db: Session = Depends(get_db)):
             "end": end.isoformat(),
             "prev_start": (start - timedelta(days=7)).isoformat(),
             "next_start": (start + timedelta(days=7)).isoformat(),
+            "filled": request.query_params.get("filled"),
+            "skipped": request.query_params.get("skipped"),
         },
     )
 
@@ -98,17 +121,33 @@ def fill_meal_plan(start: str = Form(""), db: Session = Depends(get_db)):
     filled = {(e.date, e.meal_type) for e in existing}
     empty_slots = [(d, mt) for d in days for mt in MEAL_TYPES if (d, mt) not in filled]
 
+    filled_count = 0
+    skipped_count = 0
     if empty_slots:
         recipes = db.query(models.Recipe).all()
-        if recipes:
-            pantry = db.query(models.Ingredient).all()
-            ranked = [s["recipe"] for s in recommend_local(recipes, pantry)]
-            for i, (d, mt) in enumerate(empty_slots):
-                recipe = ranked[i % len(ranked)]
-                db.add(models.MealPlanEntry(date=d, meal_type=mt, recipe_id=recipe.id))
+        pantry = db.query(models.Ingredient).all()
+        ranked = [s["recipe"] for s in recommend_local(recipes, pantry)]
+        ranked_by_meal_type = {
+            mt: [r for r in ranked if _recipe_meal_type(r) == mt] for mt in MEAL_TYPES
+        }
+        counters = {mt: 0 for mt in MEAL_TYPES}
+
+        for d, mt in empty_slots:
+            pool = ranked_by_meal_type[mt]
+            if not pool:
+                skipped_count += 1
+                continue  # no recipe categorized for this meal type -- leave it empty rather than guess
+            recipe = pool[counters[mt] % len(pool)]
+            counters[mt] += 1
+            db.add(models.MealPlanEntry(date=d, meal_type=mt, recipe_id=recipe.id))
+            filled_count += 1
+
+        if filled_count:
             db.commit()
 
-    return RedirectResponse(f"/meal-plan?start={start}", status_code=303)
+    return RedirectResponse(
+        f"/meal-plan?start={start}&filled={filled_count}&skipped={skipped_count}", status_code=303
+    )
 
 
 @router.post("/meal-plan/{entry_id}/delete")

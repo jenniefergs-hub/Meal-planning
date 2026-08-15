@@ -15,7 +15,18 @@
   <input type="hidden" name="start" value="{{ start }}">
   <button type="submit" class="btn btn-secondary">Fill empty slots with suggestions</button>
 </form>
-<p class="hint">Picks from your top-ranked recommendations, rotating through them so slots aren't all filled with the same recipe.</p>
+<p class="hint">
+  Picks from your top-ranked recommendations, matched to each slot by the recipe's category
+  (Breakfast/Brunch, Lunch, or Dinner/Supper) and rotated so slots aren't all filled with the
+  same recipe. Slots are left empty when nothing's categorized for that meal type &mdash;
+  set a category on the <a href="/recipes">Recipes page</a> to fix that.
+</p>
+{% if filled is not none %}
+<p class="{{ 'success' if filled|int > 0 else 'hint' }}">
+  Filled {{ filled }} slot{{ "" if filled == "1" else "s" }}.
+  {% if skipped and skipped|int > 0 %}Left {{ skipped }} empty (no matching-category recipe for that meal type).{% endif %}
+</p>
+{% endif %}
 {% endif %}
 
 {% for day in days %}
